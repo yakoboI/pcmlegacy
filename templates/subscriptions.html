@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="subscriptions-container">
+    <div class="subscriptions-header">
+        <h1>⭐ Choose Your Subscription Plan</h1>
+        {% if material %}
+        <div class="material-notice">
+            <p><strong>📚 Accessing:</strong> {{ material.title }}</p>
+            <p>Get unlimited access to this material and all others with our flexible subscription plans.</p>
+        </div>
+        {% else %}
+        <p>Get unlimited access to all our educational materials with our flexible subscription plans.</p>
+        {% endif %}
+    </div>
+
+    {% if plans %}
+        <div class="plans-grid">
+            {% for plan in plans %}
+            <div class="plan-card {% if plan.is_popular %}popular{% endif %}">
+                <div class="plan-header">
+                    <h3>{{ plan.name }}</h3>
+                    {% if plan.is_popular %}
+                        <span class="popular-badge">⭐ Most Popular</span>
+                    {% endif %}
+                </div>
+                
+                <div class="plan-price">
+                    <span class="price">{{ plan.formatted_price }}</span>
+                    <span class="duration">{{ plan.duration_text }}</span>
+                </div>
+                
+                <div class="plan-description">
+                    <p>{{ plan.description or 'Access to all educational materials' }}</p>
+                </div>
+                
+                <div class="plan-features">
+                    <h4>What's included:</h4>
+                    <ul>
+                        <li>📚 Access to {{ plan.max_materials }} materials</li>
+                        <li>⏰ {{ plan.duration_text }} full access</li>
+                        <li>🎥 Video content streaming</li>
+                        <li>📥 Unlimited downloads</li>
+                        <li>🔄 24/7 access</li>
+                        {% if plan.features %}
+                            {% for feature in plan.features.split('\n') %}
+                                {% if feature.strip() %}
+                                    <li>{{ feature.strip() }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="plan-actions">
+                    <a href="{{ url_for('purchase_subscription', plan_id=plan.id, material_id=material_id) if material_id else url_for('purchase_subscription', plan_id=plan.id) }}" class="btn btn-primary btn-large">
+                        Choose Plan
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No Subscription Plans Available</h3>
+            <p>Please check back later for available subscription options.</p>
+        </div>
+    {% endif %}
+
+    <div class="subscription-info">
+        <h2>Why Choose Our Subscriptions?</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-icon">📚</div>
+                <h3>Unlimited Access</h3>
+                <p>Access all materials in our library without restrictions.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">🎥</div>
+                <h3>Video Content</h3>
+                <p>Stream educational videos and multimedia content.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">📱</div>
+                <h3>Mobile Friendly</h3>
+                <p>Access your materials on any device, anywhere.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">🔄</div>
+                <h3>Regular Updates</h3>
+                <p>New materials added regularly to keep content fresh.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.subscriptions-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.subscriptions-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.subscriptions-header h1 {
+    color: #1f2937;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.subscriptions-header p {
+    color: #6b7280;
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.material-notice {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    padding: 1.25rem;
+    margin-top: 1rem;
+    border-radius: 0;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.material-notice p {
+    margin: 0.5rem 0;
+    color: #1f2937;
+}
+
+.material-notice p:first-child {
+    font-weight: 600;
+    color: #92400e;
+}
+
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.plan-card {
+    background: white;
+    border-radius: 0;
+    padding: 1.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+    position: relative;
+    text-align: center;
+}
+
+.plan-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.plan-card.popular {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+    transform: scale(1.05);
+}
+
+.plan-card.popular:hover {
+    transform: scale(1.05) translateY(-8px);
+}
+
+.plan-header {
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.plan-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.popular-badge {
+    position: absolute;
+    top: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #f59e0b;
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+}
+
+.plan-price {
+    margin-bottom: 1.25rem;
+}
+
+.price {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1f2937;
+    display: block;
+    line-height: 1;
+}
+
+.duration {
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.plan-description {
+    margin-bottom: 1.25rem;
+}
+
+.plan-description p {
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.plan-features {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.plan-features h4 {
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.plan-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.plan-features li {
+    color: #6b7280;
+    padding: 0.375rem 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.plan-actions {
+    margin-top: auto;
+}
+
+.btn-large {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0;
+}
+
+.subscription-info {
+    background: #f9fafb;
+    padding: 2rem;
+    border-radius: 0;
+    text-align: center;
+}
+
+.subscription-info h2 {
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.info-card h3 {
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.info-card p {
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .subscriptions-container {
+        padding: 1rem;
+    }
+    
+    .subscriptions-header h1 {
+        font-size: 2rem;
+    }
+    
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .plan-card.popular {
+        transform: none;
+    }
+    
+    .plan-card.popular:hover {
+        transform: translateY(-8px);
+    }
+}
+</style>
+{% endblock %}

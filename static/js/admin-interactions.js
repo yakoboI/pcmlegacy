@@ -1,0 +1,409 @@
+/**
+ * Admin Interactions Handler
+ * Safely handles admin page interactions without inline onclick handlers
+ */
+
+(function() {
+    'use strict';
+
+    // User Management Functions
+    function initUserManagement() {
+        // View user details
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="view-user"]');
+            if (btn) {
+                const userId = btn.getAttribute('data-user-id');
+                if (userId) {
+                    viewUserDetails(parseInt(userId));
+                }
+            }
+        });
+
+        // Edit user
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="edit-user"]');
+            if (btn) {
+                const userId = btn.getAttribute('data-user-id');
+                if (userId) {
+                    window.location.href = `/admin/users/${userId}/edit`;
+                }
+            }
+        });
+
+        // Toggle user status
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="toggle-user-status"]');
+            if (btn) {
+                const userId = btn.getAttribute('data-user-id');
+                const currentStatus = btn.getAttribute('data-current-status') === 'true';
+                if (userId) {
+                    toggleUserStatus(parseInt(userId), currentStatus);
+                }
+            }
+        });
+
+        // Reset material views
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="reset-views"]');
+            if (btn) {
+                const userId = btn.getAttribute('data-user-id');
+                if (userId && confirm('Are you sure you want to reset this user\'s material views? This will give them fresh first views on all materials.')) {
+                    resetMaterialViews(parseInt(userId));
+                }
+            }
+        });
+
+        // Delete user
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="delete-user"]');
+            if (btn) {
+                const userId = btn.getAttribute('data-user-id');
+                if (userId && confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+                    deleteUser(parseInt(userId));
+                }
+            }
+        });
+    }
+
+    // News Management Functions
+    function initNewsManagement() {
+        // View news
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="view-news"]');
+            if (btn) {
+                const newsId = btn.getAttribute('data-news-id');
+                if (newsId) {
+                    viewNews(parseInt(newsId));
+                }
+            }
+        });
+
+        // Edit news
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="edit-news"]');
+            if (btn) {
+                const newsId = btn.getAttribute('data-news-id');
+                if (newsId) {
+                    window.location.href = `/admin/news/${newsId}/edit`;
+                }
+            }
+        });
+
+        // Toggle news status
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="toggle-news-status"]');
+            if (btn) {
+                const newsId = btn.getAttribute('data-news-id');
+                const currentStatus = btn.getAttribute('data-current-status') === 'true';
+                if (newsId) {
+                    toggleNewsStatus(parseInt(newsId), currentStatus);
+                }
+            }
+        });
+
+        // Delete news
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="delete-news"]');
+            if (btn) {
+                const newsId = btn.getAttribute('data-news-id');
+                if (newsId && confirm('Are you sure you want to delete this news article? This action cannot be undone.')) {
+                    deleteNews(parseInt(newsId));
+                }
+            }
+        });
+    }
+
+    // Dashboard Tab Switching
+    function initDashboardTabs() {
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-tab]');
+            if (btn) {
+                const tabName = btn.getAttribute('data-tab');
+                showTab(tabName);
+            }
+        });
+
+        // Refresh downloads
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action="refresh-downloads"]');
+            if (btn) {
+                refreshDownloads();
+            }
+        });
+    }
+
+    // Form confirmation handlers
+    function initFormConfirmations() {
+        document.addEventListener('submit', function(e) {
+            const form = e.target.closest('form[data-confirm]');
+            if (form) {
+                const message = form.getAttribute('data-confirm');
+                if (message && !confirm(message)) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    }
+
+    // User Management Functions (keep existing implementations)
+    function viewUserDetails(userId) {
+        if (window.LoadingStates) {
+            window.LoadingStates.showSpinner('Loading user details...');
+        }
+        fetch(`/admin/users/${userId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                if (window.LoadingStates) {
+                    window.LoadingStates.hideSpinner();
+                }
+                if (data.success) {
+                    // Create modal with user details
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-content">
+                            <h2>User Details</h2>
+                            <pre>${JSON.stringify(data.user, null, 2)}</pre>
+                            <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+            })
+            .catch(error => {
+                if (window.LoadingStates) {
+                    window.LoadingStates.hideSpinner();
+                }
+                console.error('Error:', error);
+                alert('An error occurred while loading user details.');
+            });
+    }
+
+    function toggleUserStatus(userId, currentStatus) {
+        const newStatus = !currentStatus;
+        const action = newStatus ? 'activate' : 'deactivate';
+        
+        if (window.LoadingStates) {
+            window.LoadingStates.showSpinner('Updating user status...');
+        }
+        
+        fetch(`/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            if (data.success) {
+                alert(`User ${action}d successfully!`);
+                location.reload();
+            } else {
+                alert('Failed to update user status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            console.error('Error:', error);
+            alert('An error occurred while updating user status.');
+        });
+    }
+
+    function resetMaterialViews(userId) {
+        if (window.LoadingStates) {
+            window.LoadingStates.showSpinner('Resetting material views...');
+        }
+        
+        fetch(`/admin/users/${userId}/reset-material-views`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            if (data.success) {
+                alert('Material views reset successfully!');
+                location.reload();
+            } else {
+                alert('Failed to reset material views: ' + data.message);
+            }
+        })
+        .catch(error => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            console.error('Error:', error);
+            alert('An error occurred while resetting material views.');
+        });
+    }
+
+    function deleteUser(userId) {
+        if (window.LoadingStates) {
+            window.LoadingStates.showSpinner('Deleting user...');
+        }
+        
+        fetch(`/admin/users/${userId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            if (data.success) {
+                alert('User deleted successfully!');
+                location.reload();
+            } else {
+                alert('Failed to delete user: ' + data.message);
+            }
+        })
+        .catch(error => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            console.error('Error:', error);
+            alert('An error occurred while deleting user.');
+        });
+    }
+
+    function viewNews(newsId) {
+        window.location.href = `/news/${newsId}`;
+    }
+
+    function toggleNewsStatus(newsId, currentStatus) {
+        const newStatus = !currentStatus;
+        const action = newStatus ? 'publish' : 'unpublish';
+        
+        if (window.LoadingStates) {
+            window.LoadingStates.showSpinner('Updating news status...');
+        }
+        
+        fetch(`/admin/news/${newsId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_published: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            if (data.success) {
+                alert(`News article ${action}ed successfully!`);
+                location.reload();
+            } else {
+                alert('Failed to update news status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            console.error('Error:', error);
+            alert('An error occurred while updating news status.');
+        });
+    }
+
+    function deleteNews(newsId) {
+        if (window.LoadingStates) {
+            window.LoadingStates.showSpinner('Deleting news article...');
+        }
+        
+        fetch(`/admin/news/${newsId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            if (data.success) {
+                alert('News article deleted successfully!');
+                location.reload();
+            } else {
+                alert('Failed to delete news article: ' + data.message);
+            }
+        })
+        .catch(error => {
+            if (window.LoadingStates) {
+                window.LoadingStates.hideSpinner();
+            }
+            console.error('Error:', error);
+            alert('An error occurred while deleting news article.');
+        });
+    }
+
+    function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(function(tab) {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all buttons
+        document.querySelectorAll('.tab-button').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab
+        const selectedTab = document.getElementById(tabName + '-tab');
+        if (selectedTab) {
+            selectedTab.classList.add('active');
+        }
+        
+        // Activate selected button
+        const selectedBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (selectedBtn) {
+            selectedBtn.classList.add('active');
+        }
+    }
+
+    function refreshDownloads() {
+        location.reload();
+    }
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initUserManagement();
+            initNewsManagement();
+            initDashboardTabs();
+            initFormConfirmations();
+        });
+    } else {
+        initUserManagement();
+        initNewsManagement();
+        initDashboardTabs();
+        initFormConfirmations();
+    }
+
+    // Export functions for backward compatibility
+    window.viewUserDetails = viewUserDetails;
+    window.toggleUserStatus = toggleUserStatus;
+    window.resetMaterialViews = resetMaterialViews;
+    window.deleteUser = deleteUser;
+    window.viewNews = viewNews;
+    window.toggleNewsStatus = toggleNewsStatus;
+    window.deleteNews = deleteNews;
+    window.showTab = showTab;
+    window.refreshDownloads = refreshDownloads;
+})();
+

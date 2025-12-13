@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Top 10 Users - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="top-users-page">
+    <div class="page-header">
+        <h1>🏆 Top 10 Users</h1>
+        <p>Our top performing users and their achievements</p>
+    </div>
+    
+    <div class="top-users-table">
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>User</th>
+                    <th>Days/Month</th>
+                    <th>Downloads</th>
+                    <th>Admin Gift</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if top_users %}
+                    {% for user_data in top_users %}
+                    <tr>
+                        <td class="serial-number">{{ user_data.serial_number }}</td>
+                        <td class="user-name">
+                            <strong>{{ user_data.user.get_full_name() }}</strong>
+                        </td>
+                        <td class="days-months">{{ user_data.days_or_months }}</td>
+                        <td class="downloads">{{ user_data.total_downloads }}</td>
+                        <td class="admin-gift">
+                            {% if user_data.get('admin_gift') %}
+                                TZS {{ "{:,.0f}".format(user_data.admin_gift) }}
+                            {% else %}
+                                TZS 0
+                            {% endif %}
+                        </td>
+                        <td class="status">
+                            <span class="status-badge status-{{ user_data.get('status', 'active') }}">
+                                {{ user_data.get('status', 'active').title() }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="no-data">
+                            <p>No top users listed yet. Check back soon!</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.top-users-page {
+    padding: 2rem 0;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+}
+
+.top-users-table {
+    background: white;
+    border: 1px solid #000000;
+    overflow-x: auto;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table th {
+    background: #f0f0f0;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid #000000;
+    border: 1px solid #000000;
+}
+
+.leaderboard-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #000000;
+    border: 1px solid #000000;
+    vertical-align: middle;
+}
+
+.leaderboard-table tr:last-child td {
+    border-bottom: none;
+}
+
+.leaderboard-table tr:hover {
+    background: #f9f9f9;
+}
+
+.serial-number {
+    font-weight: bold;
+    font-size: 1.25rem;
+    color: #2563eb;
+    text-align: center;
+    width: 80px;
+}
+
+.user-name {
+    font-size: 1.1rem;
+}
+
+.days-months {
+    color: var(--text-secondary);
+}
+
+.admin-gift {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border: 1px solid #000000;
+    display: inline-block;
+}
+
+.status-active {
+    background: #28a745;
+    color: white;
+}
+
+.status-inactive {
+    background: #6c757d;
+    color: white;
+}
+
+.status-featured {
+    background: #ffc107;
+    color: #000000;
+}
+
+.no-data {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .top-users-table {
+        overflow-x: auto;
+    }
+    
+    .leaderboard-table {
+        min-width: 600px;
+    }
+    
+    .serial-number {
+        font-size: 1rem;
+    }
+    
+    .user-name {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}
+

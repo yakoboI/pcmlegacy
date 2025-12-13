@@ -1,0 +1,1110 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Subscription - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="purchase-container">
+    <div class="purchase-header">
+        <h1><span class="icon icon-star icon-lg icon-mr"></span>Purchase Subscription</h1>
+        <a href="{{ url_for('subscriptions') }}" class="btn btn-secondary">
+            ← Back to Plans
+        </a>
+    </div>
+
+    <div class="purchase-content">
+        <div class="plan-summary">
+            <div class="plan-card">
+                <div class="plan-header">
+                    <h3>{{ plan.name }}</h3>
+                    {% if plan.is_popular %}
+                        <span class="popular-badge"><span class="icon icon-star icon-sm icon-mr"></span>Popular</span>
+                    {% endif %}
+                </div>
+                
+                <div class="plan-price">
+                    <span class="price">{{ plan.formatted_price }}</span>
+                    <span class="duration">{{ plan.duration_text }}</span>
+                </div>
+                
+                <div class="plan-description">
+                    <p>{{ plan.description or 'Access to all educational materials' }}</p>
+                </div>
+                
+                <div class="plan-features">
+                    <h4>What's included:</h4>
+                    <ul>
+                        <li><span class="icon icon-book icon-sm icon-mr list-icon"></span>Access to {{ plan.max_materials }} materials</li>
+                        <li><span class="icon icon-clock icon-sm icon-mr list-icon"></span>{{ plan.duration_text }} full access</li>
+                        <li><span class="icon icon-video icon-sm icon-mr list-icon"></span>Video content streaming</li>
+                        <li><span class="icon icon-download icon-sm icon-mr list-icon"></span>Unlimited downloads</li>
+                        <li><span class="icon icon-refresh icon-sm icon-mr list-icon"></span>24/7 access</li>
+                        {% if plan.features %}
+                            {% for feature in plan.features.split('\n') %}
+                                {% if feature.strip() %}
+                                    <li>{{ feature.strip() }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-form">
+            <div class="form-card">
+                <h2>Payment Information</h2>
+                <p class="form-description">Choose your preferred payment method to complete your subscription purchase.</p>
+                
+                <!-- Payment Method Selector -->
+                <div class="payment-method-selector">
+                    <button type="button" class="payment-tab active" data-method="click-to-pay" id="clickToPayTab">
+                        <span class="icon icon-mobile icon-sm icon-mr"></span>
+                        Click to Pay (M-Pesa)
+                    </button>
+                    {% if mobile_payment_methods %}
+                    <button type="button" class="payment-tab" data-method="manual" id="manualPaymentTab">
+                        <span class="icon icon-wallet icon-sm icon-mr"></span>
+                        Manual Mobile Payment
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <!-- Click to Pay Section -->
+                <div class="payment-method-content active" id="clickToPayContent">
+                    <div class="mpesa-click-card" id="mpesaPayCard" data-plan-id="{{ plan.id }}">
+                        <div class="mpesa-card-header">
+                            <div>
+                                <span class="mpesa-chip">M-Pesa Tanzania</span>
+                                <p class="mpesa-card-title">Click to Pay for Subscription</p>
+                            </div>
+                            <div class="mpesa-amount">
+                                <span class="mpesa-amount-label">Total</span>
+                                <span class="mpesa-amount-value">{{ plan.formatted_price }}</span>
+                            </div>
+                        </div>
+                        <form class="mpesa-form" id="mpesaPayForm">
+                            <label for="mpesaMsisdn" class="mpesa-label">Vodacom number (M-Pesa)</label>
+                            <div class="mpesa-input-row">
+                                <input 
+                                    id="mpesaMsisdn" 
+                                    name="msisdn" 
+                                    type="tel" 
+                                    inputmode="numeric" 
+                                    autocomplete="tel-national"
+                                    placeholder="e.g., 07XXXXXXXX" 
+                                    value="{{ current_user.phone or '' }}" 
+                                    required
+                                >
+                                <button type="submit" class="btn btn-success mpesa-submit" id="mpesaPayButton">
+                                    Click to Pay
+                                </button>
+                            </div>
+                            <p class="mpesa-hint">
+                                You will receive a pop-up on your phone to approve the payment. Complete it within 2 minutes.
+                            </p>
+                            <div id="mpesaPayStatus" class="mpesa-status" aria-live="polite"></div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Manual Mobile Payment Section -->
+                {% if mobile_payment_methods %}
+                <div class="payment-method-content" id="manualPaymentContent">
+                    <div class="manual-payment-card">
+                        <h3>Select Mobile Payment Method</h3>
+                        <p class="form-description">Choose a payment method and follow the instructions to complete your payment.</p>
+                        
+                        <div class="mobile-payment-methods">
+                            {% for method in mobile_payment_methods %}
+                            <div class="mobile-payment-method-card" data-method-id="{{ method.id }}">
+                                <div class="method-header">
+                                    <div class="method-icon-name">
+                                        {% if method.icon %}
+                                        <span class="method-icon">{{ method.icon }}</span>
+                                        {% else %}
+                                        <span class="method-icon">📱</span>
+                                        {% endif %}
+                                    <div>
+                                        <h4>{{ method.display_name }}</h4>
+                                        <p class="method-phone">{{ method.phone_number }}</p>
+                                    </div>
+                                </div>
+                                <div class="method-actions">
+                                    {% if method.supports_click_to_pay %}
+                                    <button type="button" class="btn btn-success mpesa-click-btn" data-method-id="{{ method.id }}" data-plan-id="{{ plan.id }}">
+                                        <span class="icon icon-mobile icon-sm icon-mr"></span>
+                                        Click to Pay
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-primary select-method-btn" data-method-id="{{ method.id }}">
+                                        Manual Payment
+                                    </button>
+                                </div>
+                                </div>
+                                {% if method.account_name %}
+                                <div class="method-details">
+                                    <p><strong>Account Name:</strong> {{ method.account_name }}</p>
+                                </div>
+                                {% endif %}
+                                {% if method.instructions %}
+                                <div class="method-instructions">
+                                    <strong>Instructions:</strong>
+                                    <div class="instructions-text">{{ method.instructions|nl2br|safe }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Manual Payment Form (hidden, shown when method selected) -->
+                        <form method="POST" action="{{ url_for('purchase_subscription', plan_id=plan.id) }}{% if material_id %}?material_id={{ material_id }}{% endif %}" id="manualPaymentForm" style="display: none;">
+                            {{ form.hidden_tag() }}
+                            <input type="hidden" name="payment_method" value="mobile_payment">
+                            <input type="hidden" name="mobile_payment_method" id="selectedMobileMethod" value="">
+                            <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                            
+                            <div class="form-group">
+                                <label for="payment_reference" class="form-label">Payment Reference Number</label>
+                                <input type="text" class="form-control" id="payment_reference" name="payment_reference" 
+                                       placeholder="Enter the transaction/confirmation number" required>
+                                <small class="form-text">Include the reference number from your payment transaction.</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notes" class="form-label">Additional Notes (Optional)</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                          placeholder="Any additional information about your payment..."></textarea>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-success btn-large">
+                                    Submit Payment Details
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelManualPayment">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="payment-summary">
+                    <div class="summary-row">
+                        <span>Plan:</span>
+                        <span>{{ plan.name }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Duration:</span>
+                        <span>{{ plan.duration_text }}</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total Amount:</span>
+                        <span>{{ plan.formatted_price }}</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{{ url_for('subscriptions', material_id=material_id) if material_id else url_for('subscriptions') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if mobile_payment_methods %}
+    <div class="payment-instructions">
+        <h3>Available Payment Methods</h3>
+        <p class="instructions-description">We accept payments through the following mobile money services:</p>
+        <div class="instructions-grid">
+            {% for method in mobile_payment_methods %}
+            <div class="instruction-card">
+                <div class="instruction-icon">
+                    {% if method.icon %}
+                    <span style="font-size: 2rem;">{{ method.icon }}</span>
+                    {% else %}
+                    <span class="icon icon-mobile icon-2xl"></span>
+                    {% endif %}
+                </div>
+                <h4>{{ method.display_name }}</h4>
+                <p><strong>Number:</strong> {{ method.phone_number }}</p>
+                {% if method.account_name %}
+                <p><strong>Account:</strong> {{ method.account_name }}</p>
+                {% endif %}
+                {% if method.instructions %}
+                <p class="method-instruction-text">{{ method.instructions[:100] }}{% if method.instructions|length > 100 %}...{% endif %}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.purchase-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.purchase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.purchase-header h1 {
+    color: #1f2937;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.purchase-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 3rem;
+}
+
+.plan-summary .plan-card {
+    background: white;
+    border-radius: 0;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e5e7eb;
+    position: sticky;
+    top: 2rem;
+}
+
+.plan-header {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.plan-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.popular-badge {
+    position: absolute;
+    top: -0.5rem;
+    right: 0;
+    background: #f59e0b;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.plan-price {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.price {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1f2937;
+    display: block;
+    line-height: 1;
+}
+
+.duration {
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.plan-description {
+    margin-bottom: 1.5rem;
+}
+
+.plan-description p {
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.plan-features h4 {
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.plan-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.plan-features li {
+    color: #6b7280;
+    padding: 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.form-card {
+    background: white;
+    border-radius: 0;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e5e7eb;
+}
+
+.mpesa-click-card {
+    border: 1px solid #0f613f;
+    border-radius: 0;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    background: #f6fffb;
+    box-shadow: 0 4px 12px rgba(15, 97, 63, 0.08);
+}
+
+.mpesa-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.mpesa-chip {
+    background: #0f613f;
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.mpesa-card-title {
+    margin: 0.35rem 0 0 0;
+    font-weight: 600;
+    color: #093322;
+    font-size: 1.1rem;
+}
+
+.mpesa-amount {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.mpesa-amount-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin-bottom: 0.25rem;
+}
+
+.mpesa-amount-value {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f613f;
+}
+
+.mpesa-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mpesa-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+}
+
+.mpesa-input-row {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.mpesa-input-row input {
+    flex: 1;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0;
+    font-size: 1rem;
+}
+
+.mpesa-input-row input:focus {
+    outline: none;
+    border-color: #0f613f;
+    box-shadow: 0 0 0 2px rgba(15, 97, 63, 0.2);
+}
+
+.mpesa-submit {
+    white-space: nowrap;
+    min-width: 140px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f613f;
+    color: white;
+    border: none;
+    padding: 0.65rem 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.mpesa-submit:hover {
+    background: #0d4d32;
+}
+
+.mpesa-submit:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+}
+
+.mpesa-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+.mpesa-status {
+    min-height: 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.mpesa-status.success {
+    color: #0f613f;
+}
+
+.mpesa-status.error {
+    color: #b91c1c;
+}
+
+/* Payment Method Selector Tabs */
+.payment-method-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.payment-tab {
+    background: none;
+    border: none;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.payment-tab:hover {
+    color: #1f2937;
+    background: #f9fafb;
+}
+
+.payment-tab.active {
+    color: #0f613f;
+    border-bottom-color: #0f613f;
+    font-weight: 600;
+}
+
+.payment-method-content {
+    display: none;
+}
+
+.payment-method-content.active {
+    display: block;
+}
+
+/* Manual Payment Methods */
+.manual-payment-card {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0;
+    border: 1px solid #e5e7eb;
+}
+
+.manual-payment-card h3 {
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.mobile-payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.mobile-payment-method-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0;
+    padding: 1.5rem;
+    transition: all 0.2s;
+}
+
+.mobile-payment-method-card:hover {
+    border-color: #0f613f;
+    box-shadow: 0 2px 8px rgba(15, 97, 63, 0.1);
+}
+
+.mobile-payment-method-card.selected {
+    border-color: #0f613f;
+    background: #f6fffb;
+    box-shadow: 0 4px 12px rgba(15, 97, 63, 0.15);
+}
+
+.method-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.method-icon-name {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.method-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.method-header h4 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.method-phone {
+    margin: 0.25rem 0 0 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.method-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.select-method-btn {
+    white-space: nowrap;
+}
+
+.mpesa-click-btn {
+    white-space: nowrap;
+    background: #0f613f;
+    color: white;
+    border: none;
+}
+
+.mpesa-click-btn:hover {
+    background: #0d4d32;
+}
+
+.method-details {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0;
+}
+
+.method-details p {
+    margin: 0;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.method-instructions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.method-instructions strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+    font-size: 0.875rem;
+}
+
+.instructions-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.form-card h2 {
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.form-description {
+    color: #6b7280;
+    margin-bottom: 2rem;
+}
+
+.subscription-form {
+    max-width: 100%;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    color: #374151;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.form-errors {
+    margin-top: 0.5rem;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    display: block;
+}
+
+.payment-summary {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0;
+    margin: 2rem 0;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    color: #6b7280;
+}
+
+.summary-row.total {
+    border-top: 1px solid #d1d5db;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 1.125rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-large {
+    flex: 1;
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-radius: 0;
+}
+
+.payment-instructions {
+    background: #f9fafb;
+    padding: 2rem;
+    border-radius: 0;
+}
+
+.payment-instructions h3 {
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.instructions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.instruction-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.instruction-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.instruction-card h4 {
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.instruction-card p {
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+.instructions-description {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.method-instruction-text {
+    font-size: 0.8rem !important;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .purchase-container {
+        padding: 1rem;
+    }
+    
+    .purchase-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .purchase-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .mpesa-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .mpesa-input-row {
+        flex-direction: column;
+    }
+
+    .mpesa-submit {
+        width: 100%;
+    }
+    
+    .payment-method-selector {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .payment-tab {
+        width: 100%;
+        justify-content: center;
+        border-bottom: 2px solid #e5e7eb;
+        border-radius: 0;
+    }
+    
+    .payment-tab.active {
+        border-bottom-color: #0f613f;
+    }
+    
+    .method-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .select-method-btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Payment Method Tab Switching
+    const clickToPayTab = document.getElementById('clickToPayTab');
+    const manualPaymentTab = document.getElementById('manualPaymentTab');
+    const clickToPayContent = document.getElementById('clickToPayContent');
+    const manualPaymentContent = document.getElementById('manualPaymentContent');
+    
+    if (clickToPayTab && manualPaymentTab) {
+        clickToPayTab.addEventListener('click', function() {
+            clickToPayTab.classList.add('active');
+            manualPaymentTab.classList.remove('active');
+            if (clickToPayContent) clickToPayContent.classList.add('active');
+            if (manualPaymentContent) manualPaymentContent.classList.remove('active');
+        });
+        
+        manualPaymentTab.addEventListener('click', function() {
+            manualPaymentTab.classList.add('active');
+            clickToPayTab.classList.remove('active');
+            if (manualPaymentContent) manualPaymentContent.classList.add('active');
+            if (clickToPayContent) clickToPayContent.classList.remove('active');
+        });
+    }
+    
+    // Mobile Payment Method Click to Pay
+    const mpesaClickButtons = document.querySelectorAll('.mpesa-click-btn');
+    mpesaClickButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const methodId = this.dataset.methodId;
+            const planId = this.dataset.planId;
+            const methodCard = document.querySelector(`.mobile-payment-method-card[data-method-id="${methodId}"]`);
+            
+            // Get user phone or prompt
+            let msisdn = '';
+            {% if current_user.phone %}
+            msisdn = {{ current_user.phone|tojson|safe }};
+            {% endif %}
+            
+            if (!msisdn) {
+                msisdn = prompt('Enter your Vodacom M-Pesa number:');
+                if (!msisdn || !msisdn.trim()) {
+                    return;
+                }
+            } else {
+                msisdn = msisdn.trim();
+            }
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="icon icon-spinner icon-sm icon-mr"></span>Processing...';
+            
+            try {
+                const response = await fetch(`/api/subscriptions/${planId}/mobile-payment/${methodId}/click-to-pay`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ msisdn: msisdn.trim() })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success message
+                    if (methodCard) {
+                        const statusDiv = document.createElement('div');
+                        statusDiv.className = 'mpesa-status success';
+                        statusDiv.textContent = data.message || 'Payment request sent successfully!';
+                        methodCard.appendChild(statusDiv);
+                    }
+                    
+                    // Redirect after delay
+                    setTimeout(() => {
+                        {% if material_id %}
+                        window.location.href = "{{ url_for('material_detail', material_id=material_id) }}";
+                        {% else %}
+                        window.location.href = "{{ url_for('dashboard') }}";
+                        {% endif %}
+                    }, 2000);
+                } else {
+                    // Show error message
+                    if (methodCard) {
+                        const statusDiv = document.createElement('div');
+                        statusDiv.className = 'mpesa-status error';
+                        statusDiv.textContent = data.message || 'Payment request failed. Please try again.';
+                        methodCard.appendChild(statusDiv);
+                        
+                        // Remove error after 5 seconds
+                        setTimeout(() => {
+                            statusDiv.remove();
+                        }, 5000);
+                    }
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Click to Pay error:', error);
+                if (methodCard) {
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'mpesa-status error';
+                    statusDiv.textContent = 'Could not reach server. Check your internet connection and try again.';
+                    methodCard.appendChild(statusDiv);
+                    
+                    setTimeout(() => {
+                        statusDiv.remove();
+                    }, 5000);
+                }
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+    });
+    
+    // Manual Payment Method Selection
+    const selectMethodButtons = document.querySelectorAll('.select-method-btn');
+    const manualPaymentForm = document.getElementById('manualPaymentForm');
+    const selectedMobileMethodInput = document.getElementById('selectedMobileMethod');
+    const cancelManualPaymentBtn = document.getElementById('cancelManualPayment');
+    
+    selectMethodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const methodId = this.dataset.methodId;
+            const methodCard = document.querySelector(`.mobile-payment-method-card[data-method-id="${methodId}"]`);
+            
+            // Highlight selected method
+            document.querySelectorAll('.mobile-payment-method-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            if (methodCard) methodCard.classList.add('selected');
+            
+            // Set the selected method ID
+            if (selectedMobileMethodInput) {
+                selectedMobileMethodInput.value = methodId;
+            }
+            
+            // Show the form
+            if (manualPaymentForm) {
+                manualPaymentForm.style.display = 'block';
+                manualPaymentForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    });
+    
+    // Cancel manual payment
+    if (cancelManualPaymentBtn) {
+        cancelManualPaymentBtn.addEventListener('click', function() {
+            if (manualPaymentForm) {
+                manualPaymentForm.style.display = 'none';
+                manualPaymentForm.reset();
+            }
+            document.querySelectorAll('.mobile-payment-method-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            if (selectedMobileMethodInput) selectedMobileMethodInput.value = '';
+        });
+    }
+    
+    // Click to Pay Form
+    const form = document.getElementById('mpesaPayForm');
+    const card = document.getElementById('mpesaPayCard');
+    if (!form || !card) return;
+
+    const statusEl = document.getElementById('mpesaPayStatus');
+    const button = document.getElementById('mpesaPayButton');
+    const msisdnInput = document.getElementById('mpesaMsisdn');
+    const planId = card.dataset.planId;
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!msisdnInput.value.trim()) {
+            statusEl.textContent = 'Enter your Vodacom number.';
+            statusEl.className = 'mpesa-status error';
+            return;
+        }
+
+        statusEl.textContent = 'Sending secure payment request...';
+        statusEl.className = 'mpesa-status';
+        button.disabled = true;
+        button.textContent = 'Processing...';
+
+        try {
+            const response = await fetch(`/api/subscriptions/${planId}/mpesa-click-to-pay`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ msisdn: msisdnInput.value.trim() })
+            });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                // If response is not JSON, show generic error
+                statusEl.textContent = `Server error (${response.status}). Please try again or contact support.`;
+                statusEl.className = 'mpesa-status error';
+                console.error('Failed to parse response as JSON:', jsonError);
+                return;
+            }
+            
+            if (!response.ok) {
+                // Handle error responses
+                statusEl.textContent = data.message || `Error: ${response.status} ${response.statusText}`;
+                statusEl.className = 'mpesa-status error';
+                console.error('MPesa payment error:', data);
+            } else {
+                statusEl.textContent = data.message || 'Request completed.';
+                statusEl.className = `mpesa-status ${data.success ? 'success' : 'error'}`;
+                
+                // Redirect to dashboard after successful payment request
+                if (data.success) {
+                    setTimeout(() => {
+                        {% if material_id %}
+                        window.location.href = "{{ url_for('material_detail', material_id=material_id) }}";
+                        {% else %}
+                        window.location.href = "{{ url_for('dashboard') }}";
+                        {% endif %}
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            console.error('MPesa request failed', error);
+            statusEl.textContent = 'Could not reach server. Check your internet connection and try again.';
+            statusEl.className = 'mpesa-status error';
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Click to Pay';
+        }
+    });
+});
+</script>
+{% endblock %}

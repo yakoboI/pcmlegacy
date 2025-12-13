@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Cookie Preferences - Pcmlegacy{% endblock %}
+
+{% block description %}Manage your cookie preferences for Pcmlegacy website.{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="cookie-preferences-page">
+        <h1>Cookie Preferences</h1>
+        <p class="cookie-preferences-intro">
+            Manage your cookie preferences below. You can enable or disable different types of cookies to control how we collect and use your information.
+        </p>
+        
+        <div class="cookie-preferences-content">
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-essential" checked disabled aria-label="Essential cookies (required)">
+                        <span class="cookie-category-name">Essential Cookies</span>
+                        <span class="cookie-category-badge">Always Active</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies are necessary for the website to function and cannot be switched off. They are usually set in response to actions made by you such as setting your privacy preferences, logging in, or filling in forms. These cookies do not store any personally identifiable information.
+                </p>
+            </div>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-analytics" aria-label="Analytics cookies">
+                        <span class="cookie-category-name">Analytics Cookies</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This helps us improve our website's performance and user experience. The information collected includes page views, time spent on pages, and navigation patterns.
+                </p>
+            </div>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-functional" aria-label="Functional cookies">
+                        <span class="cookie-category-name">Functional Cookies</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies enable enhanced functionality and personalization, such as remembering your preferences, settings, and login information. They help provide a more personalized experience by remembering your choices.
+                </p>
+            </div>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-marketing" aria-label="Marketing cookies">
+                        <span class="cookie-category-name">Marketing Cookies</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies are used to deliver advertisements and track campaign effectiveness. They may be set by advertising partners to build a profile of your interests and show you relevant ads on other sites. Currently, we do not use marketing cookies, but this option is available for future use.
+                </p>
+            </div>
+        </div>
+        
+        <div class="cookie-preferences-actions">
+            <button type="button" class="btn btn-secondary" id="cookie-preferences-save-page" aria-label="Save cookie preferences">
+                Save Preferences
+            </button>
+            <button type="button" class="btn btn-primary" id="cookie-preferences-accept-all-page" aria-label="Accept all cookies">
+                Accept All
+            </button>
+            <a href="/privacy-policy" class="btn btn-outline">Learn More</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load current preferences
+document.addEventListener('DOMContentLoaded', function() {
+    const consent = window.cookieConsent ? window.cookieConsent.getConsent() : null;
+    
+    if (consent && consent.preferences && consent.preferences.categories) {
+        document.getElementById('cookie-analytics').checked = consent.preferences.categories.analytics || false;
+        document.getElementById('cookie-functional').checked = consent.preferences.categories.functional || false;
+        document.getElementById('cookie-marketing').checked = consent.preferences.categories.marketing || false;
+    }
+    
+    // Save preferences
+    document.getElementById('cookie-preferences-save-page').addEventListener('click', function() {
+        const preferences = {
+            accepted: true,
+            categories: {
+                essential: true,
+                analytics: document.getElementById('cookie-analytics').checked,
+                functional: document.getElementById('cookie-functional').checked,
+                marketing: document.getElementById('cookie-marketing').checked
+            }
+        };
+        
+        if (window.cookieConsent && window.cookieConsent.saveCookieConsent) {
+            window.cookieConsent.saveCookieConsent(preferences);
+            alert('Cookie preferences saved successfully!');
+            window.location.reload();
+        } else {
+            // Fallback if cookie consent script not loaded
+            localStorage.setItem('cookie_consent', JSON.stringify({
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                preferences: preferences
+            }));
+            alert('Cookie preferences saved successfully!');
+            window.location.reload();
+        }
+    });
+    
+    // Accept all
+    document.getElementById('cookie-preferences-accept-all-page').addEventListener('click', function() {
+        if (window.cookieConsent && window.cookieConsent.acceptAll) {
+            window.cookieConsent.acceptAll();
+        } else {
+            const preferences = {
+                accepted: true,
+                categories: {
+                    essential: true,
+                    analytics: true,
+                    functional: true,
+                    marketing: true
+                }
+            };
+            localStorage.setItem('cookie_consent', JSON.stringify({
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                preferences: preferences
+            }));
+        }
+        alert('All cookies accepted!');
+        window.location.reload();
+    });
+});
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+.cookie-preferences-page {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+}
+
+.cookie-preferences-page h1 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.cookie-preferences-intro {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.cookie-preferences-content {
+    margin-bottom: 2rem;
+}
+
+.cookie-preferences-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .cookie-preferences-page {
+        padding: 1rem;
+    }
+    
+    .cookie-preferences-actions {
+        flex-direction: column;
+    }
+    
+    .cookie-preferences-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+

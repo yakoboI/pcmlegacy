@@ -1,0 +1,389 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block styles %}
+<style>
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+}
+
+.form-section h3 {
+    margin-bottom: 1rem;
+    color: #374151;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+#documentSection {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+}
+
+#videoSection {
+    border-left: 4px solid #ef4444;
+    background: #fef2f2;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.current-file {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-checkbox-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-checkbox {
+    transform: scale(1.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-form-container">
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+        <a href="{{ url_for('admin_materials') }}" class="btn btn-secondary">
+            ← Back to Materials
+        </a>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" class="material-form">
+        {{ form.hidden_tag() }}
+        
+        <div class="form-grid">
+            
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-group">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control", placeholder="Enter material title") }}
+                    {% if form.title.errors %}
+                        <div class="form-errors">
+                            {% for error in form.title.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows="4", placeholder="For Teaching Form One Students") }}
+                    {% if form.description.errors %}
+                        <div class="form-errors">
+                            {% for error in form.description.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.category_id.label(class="form-label") }}
+                        {{ form.category_id(class="form-control") }}
+                        {% if form.category_id.errors %}
+                            <div class="form-errors">
+                                {% for error in form.category_id.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                </div>
+            </div>
+            
+            
+            <div class="form-section">
+                <h3>Material Type</h3>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        {{ form.is_video(class="form-checkbox", id="isVideoCheckbox") }}
+                        {{ form.is_video.label(class="form-checkbox-label", for="isVideoCheckbox") }}
+                        <small class="form-text">Check this if uploading a video file</small>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="form-section" id="documentSection">
+                <h3>📄 Document Upload</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="documentFile">Material File (PDF, DOC, etc.)</label>
+                        {{ form.file(class="form-control", id="documentFile") }}
+                        {% if form.file.errors %}
+                            <div class="form-errors">
+                                {% for error in form.file.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if material and material.file_path and not material.is_video %}
+                            <div class="current-file">
+                                <strong>Current file:</strong> {{ material.file_path.split('/')[-1] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text">Upload PDF, DOC, DOCX, TXT, PPT, XLS files</small>
+                    </div>
+                    
+                <div class="form-group">
+                    <label class="form-label" for="documentImage">{{ form.image.label.text }}</label>
+                    {{ form.image(class="form-control", id="documentImage") }}
+                    {% if form.image.errors %}
+                        <div class="form-errors">
+                            {% for error in form.image.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if material and material.image_path %}
+                        <div class="current-file">
+                            <strong>Current image:</strong> {{ material.image_path.split('/')[-1] }}
+                        </div>
+                    {% endif %}
+                    <small class="form-text">Cover image for the document</small>
+                </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="documentFileSize">{{ form.file_size.label.text }}</label>
+                        {{ form.file_size(class="form-control", placeholder="e.g., 2.5 MB", id="documentFileSize") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="documentFileFormat">{{ form.file_format.label.text }}</label>
+                        {{ form.file_format(class="form-control", placeholder="e.g., PDF, DOC", id="documentFileFormat") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="documentPages">{{ form.pages.label.text }}</label>
+                        {{ form.pages(class="form-control", min="0", id="documentPages") }}
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="form-section" id="videoSection" style="display: none;">
+                <h3>🎥 Video Upload</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="videoFile">Video File (MP4, WEBM, etc.)</label>
+                        <input type="file" name="file" class="form-control" id="videoFile" accept="video/*">
+                        {% if form.file.errors %}
+                            <div class="form-errors">
+                                {% for error in form.file.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if material and material.file_path and material.is_video %}
+                            <div class="current-file">
+                                <strong>Current video:</strong> {{ material.file_path.split('/')[-1] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text">Upload MP4, WEBM, AVI, MOV, WMV, FLV, MKV, M4V, 3GP files</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="videoThumbnail">{{ form.video_thumbnail.label.text }}</label>
+                        {{ form.video_thumbnail(class="form-control", id="videoThumbnail") }}
+                        {% if material and material.video_thumbnail %}
+                            <div class="current-file">
+                                <strong>Current thumbnail:</strong> {{ material.video_thumbnail.split('/')[-1] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text">Video thumbnail/preview image</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="videoFileSize">{{ form.file_size.label.text }}</label>
+                        {{ form.file_size(class="form-control", placeholder="e.g., 15.2 MB", id="videoFileSize") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="videoFileFormat">{{ form.file_format.label.text }}</label>
+                        {{ form.file_format(class="form-control", placeholder="e.g., MP4, WEBM", id="videoFileFormat") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="videoDuration">{{ form.video_duration.label.text }}</label>
+                        {{ form.video_duration(class="form-control", placeholder="e.g., 5:30", id="videoDuration") }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="videoQuality">{{ form.video_quality.label.text }}</label>
+                        {{ form.video_quality(class="form-control", placeholder="e.g., HD, 4K", id="videoQuality") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="videoPages">{{ form.pages.label.text }}</label>
+                        {{ form.pages(class="form-control", min="0", id="videoPages") }}
+                        <small class="form-text">Leave 0 for videos</small>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="form-section">
+                <h3>Settings</h3>
+                
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        {{ form.is_digital(class="form-checkbox") }}
+                        {{ form.is_digital.label(class="form-checkbox-label") }}
+                    </div>
+                    
+                    <div class="checkbox-item">
+                        {{ form.is_active(class="form-checkbox") }}
+                        {{ form.is_active.label(class="form-checkbox-label") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {{ 'Update' if action == 'edit' else 'Create' }} Material
+            </button>
+            <a href="{{ url_for('admin_materials') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isVideoCheckbox = document.getElementById('isVideoCheckbox');
+    const documentSection = document.getElementById('documentSection');
+    const videoSection = document.getElementById('videoSection');
+    const documentFile = document.getElementById('documentFile');
+    const videoFile = document.getElementById('videoFile');
+    
+    // Get all duplicate fields
+    const documentFileSize = document.getElementById('documentFileSize');
+    const videoFileSize = document.getElementById('videoFileSize');
+    const documentFileFormat = document.getElementById('documentFileFormat');
+    const videoFileFormat = document.getElementById('videoFileFormat');
+    const documentPages = document.getElementById('documentPages');
+    const videoPages = document.getElementById('videoPages');
+    
+    function toggleSections() {
+        if (isVideoCheckbox.checked) {
+            // Show video section, hide document section
+            videoSection.style.display = 'block';
+            documentSection.style.display = 'none';
+            
+            // Sync values from document to video fields
+            if (documentFileSize && videoFileSize) {
+                videoFileSize.value = documentFileSize.value;
+            }
+            if (documentFileFormat && videoFileFormat) {
+                videoFileFormat.value = documentFileFormat.value;
+            }
+            if (documentPages && videoPages) {
+                videoPages.value = documentPages.value;
+            }
+            
+            // Disable document fields to prevent submission
+            if (documentFile) {
+                documentFile.disabled = true;
+                documentFile.name = '';
+            }
+            if (videoFile) {
+                videoFile.disabled = false;
+                videoFile.name = 'file';
+            }
+        } else {
+            // Show document section, hide video section
+            documentSection.style.display = 'block';
+            videoSection.style.display = 'none';
+            
+            // Sync values from video to document fields
+            if (videoFileSize && documentFileSize) {
+                documentFileSize.value = videoFileSize.value;
+            }
+            if (videoFileFormat && documentFileFormat) {
+                documentFileFormat.value = videoFileFormat.value;
+            }
+            if (videoPages && documentPages) {
+                documentPages.value = videoPages.value;
+            }
+            
+            // Disable video fields to prevent submission
+            if (videoFile) {
+                videoFile.disabled = true;
+                videoFile.name = '';
+            }
+            if (documentFile) {
+                documentFile.disabled = false;
+                documentFile.name = 'file';
+            }
+        }
+    }
+    
+    // Add event listener
+    if (isVideoCheckbox) {
+        isVideoCheckbox.addEventListener('change', toggleSections);
+        toggleSections(); // Initial state
+    }
+    
+    // Auto-detect file type and switch sections
+    function handleFileChange(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const extension = file.name.split('.').pop().toLowerCase();
+            const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v', '3gp'];
+            const documentExtensions = ['pdf', 'doc', 'docx', 'txt', 'ppt', 'pptx', 'xls', 'xlsx'];
+            
+            if (videoExtensions.includes(extension)) {
+                isVideoCheckbox.checked = true;
+                toggleSections();
+            } else if (documentExtensions.includes(extension)) {
+                isVideoCheckbox.checked = false;
+                toggleSections();
+            }
+        }
+    }
+    
+    // Add file change listeners
+    if (documentFile) {
+        documentFile.addEventListener('change', handleFileChange);
+    }
+    if (videoFile) {
+        videoFile.addEventListener('change', handleFileChange);
+    }
+});
+</script>
+{% endblock %}

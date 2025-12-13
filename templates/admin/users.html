@@ -1,0 +1,332 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Manage Users - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Manage Users</h1>
+        <div class="admin-stats">
+            <span class="stat-item">Total Users: {{ users.total }}</span>
+        </div>
+    </div>
+    
+    
+    <div class="admin-table-container desktop-only">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users.items %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-name">{{ user.get_full_name() }}</div>
+                        </div>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone or 'N/A' }}</td>
+                    <td>
+                        {% if user.is_admin %}
+                            <span class="role-badge admin">Admin</span>
+                        {% else %}
+                            <span class="role-badge user">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ 'active' if user.is_active else 'inactive' }}">
+                            {{ 'Active' if user.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if user.last_login %}
+                            {{ user.last_login.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button data-action="view-user" data-user-id="{{ user.id }}" class="btn btn-sm btn-secondary" title="View Details" aria-label="View user details">
+                                👁️
+                            </button>
+                            <button data-action="edit-user" data-user-id="{{ user.id }}" class="btn btn-sm btn-primary" title="Edit User" aria-label="Edit user">
+                                ✏️
+                            </button>
+                            <button data-action="toggle-user-status" data-user-id="{{ user.id }}" data-current-status="{{ user.is_active|lower }}" class="btn btn-sm btn-warning" title="Toggle Status" aria-label="Toggle user status">
+                                {% if user.is_active %}⏸️{% else %}▶️{% endif %}
+                            </button>
+                            {% if not user.is_admin %}
+                            <button data-action="reset-views" data-user-id="{{ user.id }}" class="btn btn-sm btn-info" title="Reset Material Views" aria-label="Reset material views">
+                                🔄
+                            </button>
+                            <button data-action="delete-user" data-user-id="{{ user.id }}" class="btn btn-sm btn-danger" title="Delete User" aria-label="Delete user">
+                                🗑️
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="no-data">No users found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    
+    <div class="admin-card-list mobile-only">
+        {% for user in users.items %}
+        <div class="admin-card user-card">
+            <div class="admin-card-header">
+                <div>
+                    <div class="admin-card-title">{{ user.get_full_name() }}</div>
+                    <div class="admin-card-email">{{ user.email }}</div>
+                </div>
+                <div class="admin-card-status">
+                    <span class="role-badge {{ 'admin' if user.is_admin else 'user' }}">
+                        {{ 'Admin' if user.is_admin else 'User' }}
+                    </span>
+                    <span class="status-badge status-{{ 'active' if user.is_active else 'inactive' }}">
+                        {{ 'Active' if user.is_active else 'Inactive' }}
+                    </span>
+                </div>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-card-meta">
+                    <div class="meta-block">
+                        <span class="meta-label">Phone</span>
+                        <span class="meta-value">{{ user.phone or 'N/A' }}</span>
+                    </div>
+                    <div class="meta-block">
+                        <span class="meta-label">Joined</span>
+                        <span class="meta-value">{{ user.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                    <div class="meta-block">
+                        <span class="meta-label">Last Login</span>
+                        <span class="meta-value">
+                            {% if user.last_login %}
+                                {{ user.last_login.strftime('%Y-%m-%d') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-card-actions">
+                <button data-action="view-user" data-user-id="{{ user.id }}" class="btn btn-secondary btn-sm" title="View Details" aria-label="View user details">
+                    👁️ View
+                </button>
+                <button data-action="edit-user" data-user-id="{{ user.id }}" class="btn btn-primary btn-sm" title="Edit User" aria-label="Edit user">
+                    ✏️ Edit
+                </button>
+                <button data-action="toggle-user-status" data-user-id="{{ user.id }}" data-current-status="{{ user.is_active|lower }}" class="btn btn-warning btn-sm" title="Toggle Status" aria-label="Toggle user status">
+                    {% if user.is_active %}⏸️ Pause{% else %}▶️ Activate{% endif %}
+                </button>
+                {% if not user.is_admin %}
+                <button data-action="reset-views" data-user-id="{{ user.id }}" class="btn btn-info btn-sm" title="Reset Material Views" aria-label="Reset material views">
+                    🔄 Reset Trial
+                </button>
+                <button data-action="delete-user" data-user-id="{{ user.id }}" class="btn btn-danger btn-sm" title="Delete User" aria-label="Delete user">
+                    🗑️ Delete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="admin-card">
+            <p class="admin-card-note">No users found.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    
+    {% if users.pages > 1 %}
+    <div class="pagination">
+        {% if users.has_prev %}
+            <a href="{{ url_for('admin_users', page=users.prev_num) }}" class="btn btn-secondary">Previous</a>
+        {% endif %}
+        
+        <span class="pagination-info">
+            Page {{ users.page }} of {{ users.pages }}
+        </span>
+        
+        {% if users.has_next %}
+            <a href="{{ url_for('admin_users', page=users.next_num) }}" class="btn btn-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// User management functions
+function viewUserDetails(userId) {
+    // Create a modal or redirect to user details page
+    fetch(`/admin/users/${userId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showUserDetailsModal(data.user);
+            } else {
+                alert('Failed to load user details: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while loading user details.');
+        });
+}
+
+function editUser(userId) {
+    // Redirect to edit user page
+    window.location.href = `/admin/users/${userId}/edit`;
+}
+
+function toggleUserStatus(userId, currentStatus) {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+        fetch(`/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`User ${action}d successfully!`);
+                location.reload(); // Refresh the page to show updated status
+            } else {
+                alert('Failed to update user status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating user status.');
+        });
+    }
+}
+
+function resetMaterialViews(userId) {
+    if (confirm('Are you sure you want to reset this user\'s material views? This will give them fresh first views on all materials.')) {
+        fetch(`/admin/users/${userId}/reset-material-views`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Refresh the page to show updated status
+            } else {
+                alert('Failed to reset material views: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while resetting material views.');
+        });
+    }
+}
+
+function deleteUser(userId) {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone!')) {
+        fetch(`/admin/users/${userId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User deleted successfully!');
+                location.reload(); // Refresh the page to remove the user
+            } else {
+                alert('Failed to delete user: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the user.');
+        });
+    }
+}
+
+function showUserDetailsModal(user) {
+    // Create a simple modal to show user details
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        padding: 2rem;
+        border: 1px solid #000000;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    `;
+    
+    modalContent.innerHTML = `
+        <h3>User Details</h3>
+        <div style="margin-bottom: 1rem;">
+            <strong>Name:</strong> ${user.first_name} ${user.last_name}<br>
+            <strong>Email:</strong> ${user.email}<br>
+            <strong>Phone:</strong> ${user.phone || 'N/A'}<br>
+            <strong>Role:</strong> ${user.is_admin ? 'Admin' : 'User'}<br>
+            <strong>Status:</strong> ${user.is_active ? 'Active' : 'Inactive'}<br>
+            <strong>Joined:</strong> ${new Date(user.created_at).toLocaleDateString()}<br>
+            <strong>Last Login:</strong> ${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+        </div>
+        <button onclick="this.closest('.modal').remove()" class="btn btn-secondary">Close</button>
+    `;
+    
+    modal.className = 'modal';
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+</script>
+{% endblock %}

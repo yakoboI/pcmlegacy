@@ -1,0 +1,248 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Add Mobile Payment Method - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Add Mobile Payment Method</h1>
+        <a href="{{ url_for('admin_mobile_payments') }}" class="btn btn-secondary">
+            <span class="btn-icon">←</span>
+            Back to Payment Methods
+        </a>
+    </div>
+    
+    <div class="admin-form-container">
+        <form method="POST" class="admin-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-group">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-input", placeholder="e.g., mpesa_vodacom") }}
+                    {% if form.name.errors %}
+                        <div class="form-errors">
+                            {% for error in form.name.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">Unique identifier for the payment method (no spaces, use underscores)</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.display_name.label(class="form-label") }}
+                    {{ form.display_name(class="form-input", placeholder="e.g., M-Pesa (Vodacom)") }}
+                    {% if form.display_name.errors %}
+                        <div class="form-errors">
+                            {% for error in form.display_name.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">Name shown to customers in the checkout</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.icon.label(class="form-label") }}
+                    {{ form.icon(class="form-input", placeholder="e.g., 📱") }}
+                    {% if form.icon.errors %}
+                        <div class="form-errors">
+                            {% for error in form.icon.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">Emoji or icon to represent this payment method</small>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Payment Details</h3>
+                
+                <div class="form-group">
+                    {{ form.phone_number.label(class="form-label") }}
+                    {{ form.phone_number(class="form-input", placeholder="e.g., +255 123 456 789") }}
+                    {% if form.phone_number.errors %}
+                        <div class="form-errors">
+                            {% for error in form.phone_number.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">Phone number where customers will send payments</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.account_name.label(class="form-label") }}
+                    {{ form.account_name(class="form-input", placeholder="e.g., Pcmlegacy Tanzania") }}
+                    {% if form.account_name.errors %}
+                        <div class="form-errors">
+                            {% for error in form.account_name.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">Account holder name for the payment number</small>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Payment Instructions</h3>
+                
+                <div class="form-group">
+                    {{ form.instructions.label(class="form-label") }}
+                    {{ form.instructions(class="form-textarea", placeholder="Enter step-by-step payment instructions...") }}
+                    {% if form.instructions.errors %}
+                        <div class="form-errors">
+                            {% for error in form.instructions.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">
+                        Step-by-step instructions for customers. Use placeholders:<br>
+                        • <code>{amount}</code> - Will be replaced with the subscription amount<br>
+                        • <code>{phone}</code> - Will be replaced with the payment phone number
+                    </small>
+                </div>
+                
+                <div class="instructions-preview">
+                    <h4>Preview:</h4>
+                    <div class="preview-content">
+                        <p>Instructions will appear here as you type...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Status</h3>
+                
+                <div class="form-group checkbox-group">
+                    {{ form.is_active(class="form-checkbox") }}
+                    {{ form.is_active.label(class="form-checkbox-label") }}
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('admin_mobile_payments') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.instructions-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #000000;
+}
+
+.instructions-preview h4 {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.preview-content {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.preview-content .instruction-step {
+    padding: 0.5rem;
+    background: white;
+    border: 1px solid #000000;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-help {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+    line-height: 1.4;
+}
+
+.form-help code {
+    background: #f1f3f4;
+    padding: 0.125rem 0.25rem;
+    border: 1px solid #000000;
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+</style>
+
+<script>
+// Live preview of instructions
+const instructionsField = document.getElementById('instructions');
+if (instructionsField) {
+    instructionsField.addEventListener('input', function() {
+    const instructions = this.value;
+    const preview = document.querySelector('.preview-content');
+    
+    if (instructions.trim()) {
+        // Replace placeholders with example values
+        let formattedInstructions = instructions
+            .replace(/{amount}/g, 'TZS 15,000')
+            .replace(/{phone}/g, '+255 123 456 789');
+        
+        // Split into steps and format
+        const steps = formattedInstructions.split('\n').filter(step => step.trim());
+        
+        if (steps.length > 0) {
+            preview.innerHTML = '<div class="instructions-steps">' + 
+                steps.map(step => `<div class="instruction-step">${step.trim()}</div>`).join('') + 
+                '</div>';
+        } else {
+            preview.innerHTML = '<p>Enter instructions above to see preview...</p>';
+    });
+} else {
+    console.warn('Display name field not found');
+}
+} else {
+    console.warn('Instructions field not found');
+}
+
+// Auto-format phone number
+const phoneField = document.getElementById('phone_number');
+if (phoneField) {
+    phoneField.addEventListener('input', function() {
+    let value = this.value.replace(/\D/g, '');
+    if (value.startsWith('255')) {
+        value = '+' + value;
+    } else if (value.startsWith('0')) {
+        value = '+255' + value.substring(1);
+    }
+    this.value = value;
+});
+
+// Auto-generate name from display name
+const displayNameField = document.getElementById('display_name');
+if (displayNameField) {
+    displayNameField.addEventListener('input', function() {
+    const displayName = this.value;
+    const nameField = document.getElementById('name');
+    
+    if (!nameField.value) {
+        // Auto-generate name from display name
+        const generatedName = displayName
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '_')
+            .substring(0, 50);
+        nameField.value = generatedName;
+    });
+} else {
+    console.warn('Phone number field not found');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-header">
+        <h1>My Profile</h1>
+        <p>Manage your account information</p>
+    </div>
+    
+    <div class="profile-grid">
+        
+        <div class="profile-card">
+            <div class="card-header">
+                <h3>Profile Information</h3>
+                <a href="{{ url_for('edit_profile') }}" class="btn btn-secondary btn-sm">Edit Profile</a>
+            </div>
+            <div class="card-content">
+                <div class="profile-info">
+                    <div class="info-item">
+                        <label>Name:</label>
+                        <span>{{ current_user.get_full_name() }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email:</label>
+                        <span>{{ current_user.email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Phone:</label>
+                        <span>{{ current_user.phone or 'Not provided' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Member Since:</label>
+                        <span>{{ current_user.created_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Last Login:</label>
+                        <span>{{ current_user.last_login.strftime('%B %d, %Y at %I:%M %p') if current_user.last_login else 'Never' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="profile-card">
+            <div class="card-header">
+                <h3>Account Actions</h3>
+            </div>
+            <div class="card-content">
+                <div class="action-buttons">
+                    <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
+                        <span class="btn-icon">✏️</span>
+                        Edit Profile
+                    </a>
+                    <a href="{{ url_for('change_password') }}" class="btn btn-secondary">
+                        <span class="btn-icon">🔒</span>
+                        Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <div class="profile-section">
+        <h2>📬 Admin Feedback</h2>
+        <div class="profile-card">
+            <div class="card-content">
+                {% if help_requests %}
+                    <div class="feedback-list">
+                        {% for request in help_requests %}
+                        <div class="feedback-item">
+                            <div class="feedback-header">
+                                <div class="feedback-subject">
+                                    <strong>{{ request.subject }}</strong>
+                                    <span class="status-badge status-{{ request.status }}">
+                                        {{ request.status.title() }}
+                                    </span>
+                                </div>
+                                <div class="feedback-date">{{ request.formatted_date }}</div>
+                            </div>
+                            <div class="feedback-message">
+                                <p><strong>Your Message:</strong></p>
+                                <p>{{ request.message }}</p>
+                            </div>
+                            {% if request.admin_response %}
+                            <div class="feedback-response">
+                                <p><strong>Admin Response ({{ request.response_date }}):</strong></p>
+                                <div class="admin-response-box">
+                                    {{ request.admin_response }}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="feedback-pending">
+                                <p>⏳ Waiting for admin response...</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-feedback">
+                        <p>You haven't submitted any help requests yet.</p>
+                        <a href="{{ url_for('help_request') }}" class="btn btn-primary">Submit Help Request</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.profile-page {
+    padding: 2rem 0;
+}
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-header h1 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.profile-header p {
+    color: var(--text-secondary);
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.profile-card {
+    background: var(--background-color);
+    border: 1px solid #000000;
+}
+
+.card-header {
+    padding: 1.5rem 1.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #000000;
+    margin-bottom: 1rem;
+}
+
+.card-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.card-content {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #000000;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.info-item span {
+    color: var(--text-secondary);
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.profile-section h2 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+}
+
+.orders-table {
+    background: var(--background-color);
+    border: 1px solid #000000;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: #f0f0f0;
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid #000000;
+    border: 1px solid #000000;
+}
+
+.table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #000000;
+    border: 1px solid #000000;
+    vertical-align: top;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.no-orders {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.no-orders-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.no-orders h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.no-orders p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.profile-section {
+    margin-top: 3rem;
+}
+
+.feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.feedback-item {
+    padding: 1.5rem;
+    background: #f9f9f9;
+    margin-bottom: 1.5rem;
+    border-left: 3px solid var(--primary-color);
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.feedback-subject {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border: none;
+}
+
+.status-pending {
+    background: #ffc107;
+    color: #000000;
+}
+
+.status-responded {
+    background: #17a2b8;
+    color: white;
+}
+
+.status-resolved {
+    background: #28a745;
+    color: white;
+}
+
+.feedback-date {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.feedback-message {
+    margin-bottom: 1rem;
+    padding: 0;
+}
+
+.feedback-message p {
+    margin: 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.feedback-message p:first-child {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.feedback-response {
+    margin-top: 1rem;
+    padding: 0;
+}
+
+.feedback-response p {
+    margin: 0.5rem 0;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-response-box {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: #f0f8ff;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.feedback-pending {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #fff3cd;
+    text-align: center;
+    border: none;
+}
+
+.no-feedback {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.no-feedback p {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 1rem;
+    }
+    
+    .profile-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .profile-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .profile-card {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .card-header .btn {
+        width: 100%;
+    }
+    
+    .orders-table,
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -1rem;
+        padding: 0 1rem;
+    }
+    
+    .table {
+        min-width: 600px;
+        font-size: 0.875rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem;
+    }
+    
+    .feedback-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .feedback-item {
+        padding: 1rem;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .info-item label {
+        font-weight: 600;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .profile-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .profile-card {
+        padding: 0.75rem;
+    }
+    
+    .table {
+        font-size: 0.75rem;
+        min-width: 500px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.375rem;
+    }
+}
+</style>
+{% endblock %}

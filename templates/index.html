@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Pcmlegacy - Physics, Chemistry & Mathematics Resources{% endblock %}
+
+{% block description %}Discover Physics, Chemistry, and Mathematics resources for O-Level, A-Level, and University students.{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="text-center mb-4">
+        <h1>Premium Pcmlegacy</h1>
+        <p class="text-secondary">Discover Physics, Chemistry, and Mathematics resources for O-Level, A-Level, and University</p>
+    </div>
+    
+    
+    <div class="search-container">
+        <form class="search-form" action="{{ url_for('search') }}" method="GET">
+            <input 
+                type="search" 
+                name="q" 
+                class="search-input" 
+                placeholder="Search e-materials..." 
+                value="{{ request.args.get('q', '') }}"
+                aria-label="Search e-materials"
+            >
+            <button type="submit" class="search-btn">Search</button>
+        </form>
+    </div>
+</section>
+
+<section class="materials-section">
+    <h2 class="mb-4">Featured Materials</h2>
+    
+    {% if materials.items %}
+    <div class="materials-grid">
+        {% for material in materials.items %}
+        <div class="material-card{% if material.is_video %} video-material{% endif %}" data-material-url="{{ url_for('material_detail', material_id=material.id) }}" role="button" tabindex="0" aria-label="View {{ material.title }} details">
+            <div class="material-image">
+                {% if material.image_path %}
+                    {% set webp_path = material.image_path|webp_image %}
+                    <picture>
+                        {% if webp_path != material.image_path %}
+                        <source srcset="{{ url_for('static', filename=webp_path) }}" type="image/webp">
+                        {% endif %}
+                        <img src="{{ url_for('static', filename=material.image_path) }}" 
+                             alt="{{ material.title }}" 
+                             class="material-img"
+                             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
+                {% else %}
+                    <div class="material-placeholder">
+                        {% if material.is_video %}<span class="icon icon-video icon-3xl"></span>{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="material-content">
+                <h3 class="material-title">{{ material.title }}</h3>
+                <p class="material-description">{{ material.description[:100] }}{% if material.description|length > 100 %}...{% endif %}</p>
+                
+                <div class="material-meta">
+                    <span class="material-category">{{ material.category.name }}</span>
+                    <span class="material-date">📅 {{ material.created_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                
+                <div class="material-actions">
+                    {% if current_user.is_authenticated %}
+                        
+                        <div class="action-dropdown">
+                            <a href="{% if material.is_video %}{{ url_for('stream_video', material_id=material.id) }}{% else %}{{ url_for('download_material', material_id=material.id) }}{% endif %}" class="btn btn-primary action-main">
+                                {% if material.is_video %}
+                                    <span class="icon icon-video icon-sm icon-mr"></span>Watch
+                                {% else %}
+                                    <span class="icon icon-download icon-sm icon-mr"></span>Download
+                                {% endif %}
+                            </a>
+                            
+                            <div class="action-menu">
+                                {% if not material.is_video %}
+                                    <a href="{{ url_for('download_material', material_id=material.id) }}" class="action-item">
+                                        <span class="icon icon-download icon-sm icon-mr"></span>Download
+                                    </a>
+                                {% endif %}
+                                <a href="{{ url_for('material_detail', material_id=material.id) }}" class="action-item">
+                                    <span class="icon icon-search icon-sm icon-mr"></span>View Details
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        {% if current_user.is_authenticated and current_user.has_active_access() %}
+                            <a href="{% if material.is_video %}{{ url_for('stream_video', material_id=material.id) }}{% else %}{{ url_for('download_material', material_id=material.id) }}{% endif %}" class="btn btn-success">
+                                {% if material.is_video %}<span class="icon icon-video icon-sm icon-mr"></span>Watch{% else %}<span class="icon icon-download icon-sm icon-mr"></span>Download{% endif %}
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-primary">Login to Access</a>
+                        {% endif %}
+                        <a href="{{ url_for('material_detail', material_id=material.id) }}" class="btn btn-secondary" data-stop-propagation="true">
+                            View Details
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    
+    {% if materials.pages > 1 %}
+    <div class="pagination">
+        {% if materials.has_prev %}
+            <a href="{{ url_for('index', page=materials.prev_num) }}" class="btn btn-secondary">Previous</a>
+        {% endif %}
+        
+        <span class="pagination-info">
+            Page {{ materials.page }} of {{ materials.pages }}
+        </span>
+        
+        {% if materials.has_next %}
+            <a href="{{ url_for('index', page=materials.next_num) }}" class="btn btn-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center">
+        <p class="text-secondary">No materials found. Try adjusting your search criteria.</p>
+    </div>
+    {% endif %}
+</section>
+
+<section class="categories-section mt-4">
+    <h2 class="mb-4">Browse by Category</h2>
+    
+    <div class="categories-grid">
+        {% for category in categories %}
+        <div class="category-card" data-category-url="{{ url_for('search', category=category.id) }}" role="button" tabindex="0" aria-label="Browse {{ category.name }} category">
+            <div class="category-icon">{{ category.icon if category and category.icon else '📚' }}</div>
+            <h3>{{ category.name }}</h3>
+            <p>{{ category.description or 'Explore materials in this category' }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block styles %}
+<style>
+.material-date {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.material-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .material-meta {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .materials-section,
+    .categories-section {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        padding: 0;
+    }
+    
+    .materials-grid,
+    .categories-grid {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0.75rem 0;
+    }
+    
+    .material-card {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    
+    .material-image {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .material-img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .material-content {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        word-wrap: break-word;
+    }
+    
+    .material-title,
+    .material-description {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        max-width: 100%;
+    }
+    
+    .material-actions {
+        width: 100%;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .material-actions .btn {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .pagination {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .pagination .btn {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .hero {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        padding: 1rem 0;
+    }
+    
+    .search-container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .search-form {
+        width: 100%;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .search-input {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .search-btn {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

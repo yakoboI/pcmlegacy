@@ -1,0 +1,1083 @@
+{% extends "base.html" %}
+
+{% block title %}Read: {{ material.title }} - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="read-material-container">
+    <div class="read-material-header">
+        <div class="read-material-nav">
+            <a href="{{ url_for('material_detail', material_id=material.id) }}" class="btn btn-secondary">
+                ← Back to Details
+            </a>
+            <a href="{{ url_for('download_material', material_id=material.id) }}" class="btn btn-success">
+                📥 Download
+            </a>
+        </div>
+        <h1 class="read-material-title">{{ material.title }}</h1>
+        <p class="read-material-meta">
+            <span>Category: {{ material.category.name }}</span>
+            <span>Format: {{ material.file_format.upper() }}</span>
+            {% if material.pages %}
+            <span>Pages: {{ material.pages }}</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="read-material-content">
+        {% if file_format == 'pdf' %}
+            
+            <div class="pdf-viewer-container">
+                <iframe 
+                    src="{{ file_url }}#toolbar=1&navpanes=1&scrollbar=1" 
+                    class="pdf-viewer"
+                    title="PDF Viewer for {{ material.title }}"
+                    frameborder="0"
+                >
+                    <p>Your browser does not support PDF viewing. 
+                        <a href="{{ url_for('download_material', material_id=material.id) }}">Download the PDF</a> instead.
+                    </p>
+                </iframe>
+            </div>
+        {% elif file_format in ['docx', 'doc'] %}
+            
+            <div class="word-viewer-container">
+                <div id="word-viewer" class="word-viewer">
+                    <div class="loading-indicator">
+                        <div class="spinner"></div>
+                        <p>Loading document...</p>
+                    </div>
+                </div>
+                
+                <div class="word-viewer-actions">
+                    <p class="viewer-note">
+                        <strong>Note:</strong> For best viewing experience, download the document.
+                        <a href="{{ url_for('download_material', material_id=material.id) }}" class="btn btn-sm btn-success">
+                            Download Original
+                        </a>
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            
+            <div class="unsupported-viewer">
+                <div class="unsupported-icon">📄</div>
+                <h2>Online Reading Not Available</h2>
+                <p>This file format ({{ file_format.upper() }}) cannot be viewed in the browser.</p>
+                <p>Please download the file to view it:</p>
+                <a href="{{ url_for('download_material', material_id=material.id) }}" class="btn btn-success btn-large">
+                    📥 Download {{ material.file_format.upper() }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if file_format in ['docx', 'doc'] %}
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.4/dist/docx-preview.min.js"></script>
+
+<script src="{{ url_for('static', filename='js/safe-dom.js') }}?v=1.0"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const viewer = document.getElementById('word-viewer');
+    const fileUrl = '{{ file_url }}';
+    
+    // Wait for libraries to load (JSZip and docx-preview)
+    function waitForLibraries(callback, maxAttempts = 15) {
+        let attempts = 0;
+        const checkLibraries = setInterval(function() {
+            attempts++;
+            if (typeof JSZip !== 'undefined' && typeof docx !== 'undefined' && docx.renderAsync) {
+                clearInterval(checkLibraries);
+                callback();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkLibraries);
+                const missingLibs = [];
+                if (typeof JSZip === 'undefined') missingLibs.push('JSZip');
+                if (typeof docx === 'undefined' || !docx.renderAsync) missingLibs.push('docx-preview');
+                // Use safe DOM manipulation instead of innerHTML
+                window.safeDOM.clear(viewer);
+                const errorDiv = window.safeDOM.createElement('div', { className: 'error-message' });
+                const errorP1 = window.safeDOM.createElement('p', null, 'Document viewer libraries failed to load. Please download the document instead.');
+                const errorP2 = window.safeDOM.createElement('p', { style: 'font-size: 0.875rem; color: #6b7280;' }, 'Missing: ' + missingLibs.join(', '));
+                const downloadLink = window.safeDOM.createElement('a', { 
+                    href: '{{ url_for("download_material", material_id=material.id) }}',
+                    className: 'btn btn-success'
+                }, 'Download Document');
+                window.safeDOM.appendChild(errorDiv, errorP1);
+                window.safeDOM.appendChild(errorDiv, errorP2);
+                window.safeDOM.appendChild(errorDiv, downloadLink);
+                window.safeDOM.appendChild(viewer, errorDiv);
+            }
+        }, 200);
+    }
+    
+    waitForLibraries(function() {
+        // Fetch the document
+        fetch(fileUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load document: ' + response.statusText + ' (Status: ' + response.status + ')');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Clear loading indicator safely
+                window.safeDOM.clear(viewer);
+                
+                // Render the document using docx-preview library with optimized settings
+                docx.renderAsync(blob, viewer, viewer, {
+                    className: 'docx-wrapper',
+                    inWrapper: true,
+                    ignoreWidth: true,
+                    ignoreHeight: true,
+                    ignoreFonts: false,
+                    breakPages: false,
+                    ignoreLastRenderedPageBreak: true,
+                    experimental: false,
+                    trimXmlDeclaration: true,
+                    useBase64URL: false,
+                    useMathMLPolyfill: true,
+                    showChanges: false,
+                    showComments: false,
+                    showInserted: true,
+                    showDeleted: false
+                }).catch(error => {
+                    console.error('Error rendering document:', error);
+                    window.safeDOM.setError(viewer, 
+                        'Failed to render document. Please download it instead.',
+                        '{{ url_for("download_material", material_id=material.id) }}',
+                        'Download Document'
+                    );
+                    const errorP2 = window.safeDOM.createElement('p', { style: 'font-size: 0.875rem; color: #6b7280;' }, 'Error: ' + (error.message || 'Unknown error'));
+                    const errorDiv = viewer.querySelector('.error-message');
+                    if (errorDiv) {
+                        window.safeDOM.appendChild(errorDiv, errorP2);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching document:', error);
+                window.safeDOM.setError(viewer, 
+                    'Failed to load document. Please download it instead.',
+                    '{{ url_for("download_material", material_id=material.id) }}',
+                    'Download Document'
+                );
+                const errorP2 = window.safeDOM.createElement('p', { style: 'font-size: 0.875rem; color: #6b7280;' }, 'Error: ' + (error.message || 'Unknown error'));
+                const errorDiv = viewer.querySelector('.error-message');
+                if (errorDiv) {
+                    window.safeDOM.appendChild(errorDiv, errorP2);
+                }
+            });
+    });
+});
+</script>
+{% endif %}
+
+<style>
+.read-material-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    min-height: calc(100vh - 200px);
+    box-sizing: border-box;
+    background: #f9fafb;
+}
+
+.read-material-header {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    width: 100%;
+    box-sizing: border-box;
+    background: #ffffff;
+    padding: 0.75rem 1rem;
+    margin: -0.5rem 0 1rem 0;
+}
+
+.read-material-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.read-material-nav .btn {
+    flex: 1;
+    min-width: calc(50% - 0.25rem);
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0;
+    text-align: center;
+}
+
+.read-material-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.375rem;
+    word-wrap: break-word;
+    line-height: 1.3;
+}
+
+.read-material-meta {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    align-items: center;
+}
+
+.read-material-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.read-material-content {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    background: #ffffff;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
+
+.pdf-viewer-container {
+    width: 100%;
+    max-width: 100%;
+    height: calc(100vh - 220px);
+    min-height: 350px;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+    background: #ffffff;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-viewer {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+.word-viewer-container {
+    width: 100%;
+    max-width: 100%;
+    min-height: 350px;
+    box-sizing: border-box;
+    background: #ffffff;
+}
+
+.word-viewer {
+    width: 100%;
+    max-width: 100%;
+    min-height: 350px;
+    max-height: calc(100vh - 220px);
+    background: #ffffff;
+    border: none;
+    border-radius: 0;
+    padding: 1.5rem;
+    overflow-x: auto;
+    overflow-y: auto;
+    box-sizing: border-box;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pan-x;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.loading-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 250px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.word-viewer-actions {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0;
+    text-align: center;
+    border: none;
+    border-top: 1px solid #e5e7eb;
+}
+
+.viewer-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.viewer-note a {
+    margin-left: 0.5rem;
+}
+
+.unsupported-viewer {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    background: var(--background-color);
+    border: 1px dashed var(--border-color);
+    border-radius: 0;
+}
+
+.unsupported-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.unsupported-viewer h2 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.unsupported-viewer p {
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.error-message {
+    text-align: center;
+    padding: 1rem;
+    color: var(--danger-color);
+}
+
+.error-message p {
+    margin-bottom: 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.docx-wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    background: #ffffff;
+    padding: 0;
+}
+
+.word-viewer .docx-wrapper,
+.word-viewer .docx-wrapper * {
+    font-size: inherit !important;
+    line-height: inherit !important;
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+.word-viewer p,
+.word-viewer .docx-wrapper p {
+    margin-bottom: 0.75rem !important;
+    margin-top: 0 !important;
+    line-height: 1.6 !important;
+    font-size: 1rem !important;
+    text-align: left !important;
+    padding: 0 !important;
+}
+
+.word-viewer h1,
+.word-viewer .docx-wrapper h1 {
+    font-size: 2rem !important;
+    margin-bottom: 0.75rem !important;
+    margin-top: 1.5rem !important;
+    line-height: 1.2 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.word-viewer h2,
+.word-viewer .docx-wrapper h2 {
+    font-size: 1.75rem !important;
+    margin-bottom: 0.75rem !important;
+    margin-top: 1.25rem !important;
+    line-height: 1.3 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.word-viewer h3,
+.word-viewer .docx-wrapper h3 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    margin-top: 1rem !important;
+    line-height: 1.4 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.word-viewer ul,
+.word-viewer ol,
+.word-viewer .docx-wrapper ul,
+.word-viewer .docx-wrapper ol {
+    margin-bottom: 0.75rem !important;
+    margin-top: 0.5rem !important;
+    padding-left: 1.5rem !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.word-viewer li,
+.word-viewer .docx-wrapper li {
+    margin-bottom: 0.25rem !important;
+    line-height: 1.6 !important;
+    padding: 0 !important;
+}
+
+.word-viewer table,
+.word-viewer .docx-wrapper table {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    border: none !important;
+}
+
+.word-viewer table td,
+.word-viewer table th,
+.word-viewer .docx-wrapper table td,
+.word-viewer .docx-wrapper table th {
+    padding: 0.375rem 0.5rem !important;
+    border: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    vertical-align: top !important;
+    text-align: left !important;
+}
+
+.word-viewer table thead th,
+.word-viewer .docx-wrapper table thead th {
+    background: #f9fafb !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #d1d5db !important;
+}
+
+.word-viewer table tbody tr:last-child td,
+.word-viewer .docx-wrapper table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+.word-viewer table tbody tr:hover,
+.word-viewer .docx-wrapper table tbody tr:hover {
+    background: #f9fafb !important;
+}
+
+.word-viewer img,
+.word-viewer .docx-wrapper img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin: 1rem auto !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.word-viewer div,
+.word-viewer .docx-wrapper div {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.word-viewer blockquote,
+.word-viewer .docx-wrapper blockquote {
+    margin: 1rem 0 !important;
+    padding: 0.75rem 1rem !important;
+    border-left: 3px solid #d1d5db !important;
+    background: #f9fafb !important;
+    border-top: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+}
+
+.word-viewer hr,
+.word-viewer .docx-wrapper hr {
+    margin: 1.5rem 0 !important;
+    border: none !important;
+    border-top: 1px solid #e5e7eb !important;
+    background: transparent !important;
+}
+
+.word-viewer .docx-wrapper table[style*="border"] {
+    border: none !important;
+}
+
+.word-viewer .docx-wrapper table td[style*="border"],
+.word-viewer .docx-wrapper table th[style*="border"] {
+    border: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.word-viewer .docx-wrapper table td[style*="border"]:last-child,
+.word-viewer .docx-wrapper table th[style*="border"]:last-child {
+    border-right: none !important;
+}
+
+.word-viewer .docx-wrapper table thead tr th[style*="border"] {
+    border-bottom: 2px solid #d1d5db !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* Mobile/Small Screen Optimizations */
+@media (max-width: 767px) {
+    .read-material-container {
+        padding: 0;
+        min-height: calc(100vh - 120px);
+    }
+    
+    .read-material-header {
+        padding: 0.75rem 0.5rem;
+        margin: 0 0 0.75rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .read-material-nav {
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .read-material-nav .btn {
+        flex: 1;
+        min-width: calc(50% - 0.25rem);
+        font-size: 0.7rem;
+        padding: 0.5rem 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .read-material-title {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        padding: 0 0.5rem;
+    }
+    
+    .read-material-meta {
+        flex-direction: row;
+        gap: 0.5rem;
+        font-size: 0.7rem;
+        flex-wrap: wrap;
+        padding: 0 0.5rem;
+    }
+    
+    .read-material-meta span {
+        white-space: normal;
+        font-size: 0.7rem;
+    }
+    
+    .read-material-content {
+        margin-top: 0;
+        padding: 0;
+    }
+    
+    .pdf-viewer-container {
+        height: calc(100vh - 160px);
+        min-height: 400px;
+        border: none;
+        box-shadow: none;
+    }
+    
+    .word-viewer-container {
+        padding: 0;
+        background: #ffffff;
+    }
+    
+    .word-viewer {
+        padding: 1rem 0.75rem;
+        min-height: 400px;
+        max-height: calc(100vh - 160px);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y pan-x;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .word-viewer * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .word-viewer p,
+    .word-viewer .docx-wrapper p {
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+        margin-bottom: 0.625rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+    
+    .word-viewer h1,
+    .word-viewer .docx-wrapper h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.625rem !important;
+        margin-top: 1rem !important;
+        line-height: 1.2 !important;
+        word-wrap: break-word !important;
+    }
+    
+    .word-viewer h2,
+    .word-viewer .docx-wrapper h2 {
+        font-size: 1.25rem !important;
+        margin-bottom: 0.5rem !important;
+        margin-top: 0.875rem !important;
+        line-height: 1.3 !important;
+        word-wrap: break-word !important;
+    }
+    
+    .word-viewer h3,
+    .word-viewer .docx-wrapper h3 {
+        font-size: 1.125rem !important;
+        margin-bottom: 0.5rem !important;
+        margin-top: 0.875rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    .word-viewer ul,
+    .word-viewer ol,
+    .word-viewer .docx-wrapper ul,
+    .word-viewer .docx-wrapper ol {
+        padding-left: 1.25rem !important;
+        margin-bottom: 0.625rem !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .word-viewer li,
+    .word-viewer .docx-wrapper li {
+        margin-bottom: 0.25rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+    }
+    
+    .word-viewer table,
+    .word-viewer .docx-wrapper table {
+        font-size: 0.75rem !important;
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: max-content !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 1rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    .word-viewer table td,
+    .word-viewer table th,
+    .word-viewer .docx-wrapper table td,
+    .word-viewer .docx-wrapper table th {
+        padding: 0.5rem 0.375rem !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+        min-width: 80px !important;
+    }
+    
+    .word-viewer table thead th,
+    .word-viewer .docx-wrapper table thead th {
+        font-size: 0.75rem !important;
+        padding: 0.5rem 0.375rem !important;
+    }
+    
+    .word-viewer img,
+    .word-viewer .docx-wrapper img {
+        max-width: 100% !important;
+        height: auto !important;
+        margin: 0.75rem 0 !important;
+    }
+    
+    .word-viewer blockquote,
+    .word-viewer .docx-wrapper blockquote {
+        margin: 0.75rem 0 !important;
+        padding: 0.625rem 0.875rem !important;
+        font-size: 0.9375rem !important;
+    }
+    
+    .word-viewer-actions {
+        margin-top: 0.75rem;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.7rem;
+    }
+    
+    .viewer-note {
+        font-size: 0.7rem;
+        line-height: 1.4;
+    }
+    
+    .viewer-note a {
+        display: block;
+        margin-top: 0.5rem;
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .unsupported-viewer {
+        padding: 2rem 1rem;
+    }
+    
+    .unsupported-icon {
+        font-size: 3rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .unsupported-viewer h2 {
+        font-size: 1.125rem;
+    }
+    
+    .unsupported-viewer p {
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .error-message {
+        padding: 1rem 0.5rem;
+    }
+    
+    .error-message p {
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .viewer-note {
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+    
+    .viewer-note a {
+        display: inline-block;
+        margin-top: 0.5rem;
+        margin-left: 0;
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* Small Screen Optimizations (Mobile First) */
+@media (max-width: 767px) {
+    .read-material-container {
+        padding: 0;
+    }
+    
+    .read-material-header {
+        padding: 0.75rem 0.5rem;
+        margin: 0 0 0.75rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .read-material-nav {
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        flex-direction: row;
+    }
+    
+    .read-material-nav .btn {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .read-material-title {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        padding: 0 0.5rem;
+    }
+    
+    .read-material-meta {
+        gap: 0.5rem;
+        font-size: 0.7rem;
+        flex-wrap: wrap;
+        padding: 0 0.5rem;
+    }
+    
+    .read-material-meta span {
+        font-size: 0.7rem;
+    }
+    
+    .read-material-content {
+        margin-top: 0;
+        padding: 0;
+    }
+    
+    .pdf-viewer-container {
+        height: calc(100vh - 180px);
+        min-height: 400px;
+        border: none;
+        box-shadow: none;
+    }
+    
+    .word-viewer {
+        padding: 1rem 0.75rem;
+        min-height: 400px;
+        max-height: calc(100vh - 180px);
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+    
+    .word-viewer p,
+    .word-viewer .docx-wrapper p {
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+        margin-bottom: 0.625rem !important;
+    }
+    
+    .word-viewer h1,
+    .word-viewer .docx-wrapper h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.625rem !important;
+        margin-top: 1rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    .word-viewer h2,
+    .word-viewer .docx-wrapper h2 {
+        font-size: 1.25rem !important;
+        margin-bottom: 0.5rem !important;
+        margin-top: 0.875rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    .word-viewer h3,
+    .word-viewer .docx-wrapper h3 {
+        font-size: 1.125rem !important;
+        margin-bottom: 0.5rem !important;
+        margin-top: 0.75rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    .word-viewer table,
+    .word-viewer .docx-wrapper table {
+        font-size: 0.75rem !important;
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .word-viewer table td,
+    .word-viewer table th,
+    .word-viewer .docx-wrapper table td,
+    .word-viewer .docx-wrapper table th {
+        padding: 0.5rem 0.375rem !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+        min-width: 80px !important;
+    }
+    
+    .word-viewer ul,
+    .word-viewer ol,
+    .word-viewer .docx-wrapper ul,
+    .word-viewer .docx-wrapper ol {
+        padding-left: 1.25rem !important;
+        margin-bottom: 0.625rem !important;
+    }
+    
+    .word-viewer li,
+    .word-viewer .docx-wrapper li {
+        margin-bottom: 0.25rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+    }
+    
+    .word-viewer img,
+    .word-viewer .docx-wrapper img {
+        max-width: 100% !important;
+        height: auto !important;
+        margin: 0.75rem 0 !important;
+    }
+    
+    .word-viewer-actions {
+        margin-top: 0.75rem;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .viewer-note {
+        font-size: 0.7rem;
+        line-height: 1.4;
+    }
+    
+    .viewer-note a {
+        display: block;
+        margin-top: 0.5rem;
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .unsupported-viewer {
+        padding: 2rem 1rem;
+    }
+    
+    .unsupported-icon {
+        font-size: 3rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .unsupported-viewer h2 {
+        font-size: 1.125rem;
+    }
+    
+    .unsupported-viewer p {
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .error-message {
+        padding: 1rem 0.5rem;
+    }
+    
+    .error-message p {
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .read-material-nav .btn {
+        font-size: 0.7rem;
+        padding: 0.45rem 0.5rem;
+    }
+}
+
+/* Large Screen Optimizations */
+@media (min-width: 768px) {
+    .read-material-container {
+        padding: 1rem 0;
+    }
+    
+    .read-material-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom-width: 2px;
+        padding: 1rem 1.5rem;
+    }
+    
+    .read-material-nav {
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .read-material-nav .btn {
+        flex: none;
+        min-width: auto;
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .read-material-title {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .read-material-meta {
+        gap: 1.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .read-material-content {
+        margin-top: 1.5rem;
+    }
+    
+    .pdf-viewer-container {
+        height: calc(100vh - 250px);
+        min-height: 600px;
+    }
+    
+    .word-viewer {
+        padding: 2rem 2.5rem;
+        min-height: 600px;
+        max-height: none;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    
+    .word-viewer-actions {
+        margin-top: 1rem;
+        padding: 1rem;
+    }
+    
+    .viewer-note {
+        font-size: 0.875rem;
+    }
+    
+    .unsupported-viewer {
+        padding: 3rem 2rem;
+    }
+    
+    .unsupported-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    
+    .unsupported-viewer h2 {
+        font-size: 1.5rem;
+    }
+    
+    .unsupported-viewer p {
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+    
+    .error-message {
+        padding: 1.5rem 1rem;
+    }
+    
+    .error-message p {
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+

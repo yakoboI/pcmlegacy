@@ -1,0 +1,356 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Subscription Plans - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>📋 Subscription Plans</h1>
+        <div class="admin-actions">
+            <a href="{{ url_for('admin_add_subscription_plan') }}" class="btn btn-primary">
+                <span class="btn-icon">➕</span>
+                Add New Plan
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-content">
+        {% if plans %}
+            <div class="plans-grid">
+                {% for plan in plans %}
+                <div class="plan-card {% if plan.is_popular %}popular{% endif %}">
+                    <div class="plan-header">
+                        <h3>{{ plan.name }}</h3>
+                        {% if plan.is_popular %}
+                            <span class="popular-badge">⭐ Popular</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="plan-price">
+                        <span class="price">{{ plan.formatted_price }}</span>
+                        <span class="duration">{{ plan.duration_text }}</span>
+                    </div>
+                    
+                    <div class="plan-description">
+                        <p>{{ plan.description or 'No description available' }}</p>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <h4>Features:</h4>
+                        <ul>
+                            <li>📚 Up to {{ plan.max_materials }} materials</li>
+                            <li>⏰ {{ plan.duration_text }} access</li>
+                            {% if plan.features %}
+                                {% for feature in plan.features.split('\n') %}
+                                    {% if feature.strip() %}
+                                        <li>{{ feature.strip() }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <div class="plan-status">
+                        <span class="status-badge status-{{ 'active' if plan.is_active else 'inactive' }}">
+                            {{ 'Active' if plan.is_active else 'Inactive' }}
+                        </span>
+                    </div>
+                    
+                    <div class="plan-actions">
+                        <a href="{{ url_for('admin_edit_subscription_plan', plan_id=plan.id) }}" class="btn btn-sm btn-primary">
+                            ✏️ Edit
+                        </a>
+                        
+                        <form method="POST" action="{{ url_for('admin_toggle_subscription_plan', plan_id=plan.id) }}" class="plan-action-form">
+                            <button type="submit" class="btn btn-sm btn-{{ 'warning' if plan.is_active else 'success' }}">
+                                {{ 'Deactivate' if plan.is_active else 'Activate' }}
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="{{ url_for('admin_delete_subscription_plan', plan_id=plan.id) }}" class="plan-action-form" 
+                              onsubmit="return confirm('Are you sure you want to delete this plan? This action cannot be undone.');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h3>No Subscription Plans</h3>
+                <p>Create your first subscription plan to get started.</p>
+                <a href="{{ url_for('admin_add_subscription_plan') }}" class="btn btn-primary">
+                    ➕ Add First Plan
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.plan-card {
+    background: white;
+    border-radius: 0;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.plan-card.popular {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+}
+
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.plan-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.popular-badge {
+    background: #f59e0b;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.plan-price {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.price {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: block;
+}
+
+.duration {
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.plan-description {
+    margin-bottom: 1.5rem;
+}
+
+.plan-description p {
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.plan-features {
+    margin-bottom: 1.5rem;
+}
+
+.plan-features h4 {
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.plan-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.plan-features li {
+    color: #6b7280;
+    padding: 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.plan-status {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.plan-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.plan-actions .btn {
+    flex: 1;
+    min-width: 80px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.plan-actions form,
+.plan-actions .plan-action-form {
+    flex: 1;
+    min-width: 80px;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.plan-actions form button,
+.plan-actions .plan-action-form button {
+    width: 100%;
+    margin: 0;
+}
+
+.plan-actions a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin-bottom: 2rem;
+}
+
+/* Mobile/Small Screen Optimizations */
+@media (max-width: 767px) {
+    .plans-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .plan-card {
+        padding: 1.5rem;
+    }
+    
+    .plan-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .plan-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .popular-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+    }
+    
+    .price {
+        font-size: 2rem;
+    }
+    
+    .duration {
+        font-size: 0.875rem;
+    }
+    
+    .plan-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .plan-actions .btn,
+    .plan-actions form {
+        flex: 1;
+        min-width: 100%;
+        width: 100%;
+    }
+    
+    .plan-actions form button {
+        width: 100%;
+    }
+    
+    .plan-actions a {
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .admin-actions {
+        width: 100%;
+    }
+    
+    .admin-actions .btn {
+        width: 100%;
+    }
+    
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %}

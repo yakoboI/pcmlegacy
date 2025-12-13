@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}{{ news.title }} - Pcmlegacy News{% endblock %}
+
+{% block description %}{{ news.excerpt or news.content[:200] }}{% endblock %}
+
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ news.title }} - Pcmlegacy News{% endblock %}
+{% block og_description %}{{ news.excerpt or news.content[:200] }}{% endblock %}
+{% block twitter_title %}{{ news.title }} - Pcmlegacy News{% endblock %}
+{% block twitter_description %}{{ news.excerpt or news.content[:200] }}{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": "{{ news.title|e }}",
+    "description": "{{ (news.excerpt or news.content[:200])|e }}",
+    "datePublished": "{{ news.created_at.strftime('%Y-%m-%dT%H:%M:%S+00:00') }}",
+    "dateModified": "{{ (news.updated_at or news.created_at).strftime('%Y-%m-%dT%H:%M:%S+00:00') }}",
+    "author": {
+        "@type": "Person",
+        "name": "{{ news.author.get_full_name()|e }}"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "Pcmlegacy",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='images/favicon.svg') }}"
+        }
+    },
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.url }}"
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <nav class="breadcrumb">
+        <a href="{{ url_for('index') }}">Home</a>
+        <span class="breadcrumb-separator">›</span>
+        <a href="{{ url_for('news') }}">News</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="breadcrumb-current">{{ news.title[:50] }}{% if news.title|length > 50 %}...{% endif %}</span>
+    </nav>
+    
+    <div class="news-detail-container">
+        <article class="news-article">
+            <header class="article-header">
+                {% if news.is_featured %}
+                <div class="featured-badge">⭐ Featured Article</div>
+                {% endif %}
+                
+                <h1 class="article-title">{{ news.title }}</h1>
+                
+                <div class="article-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">👤</span>
+                        <span class="meta-text">By {{ news.author.get_full_name() }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <span class="meta-text">{{ news.formatted_date }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">👁️</span>
+                        <span class="meta-text">{{ news.view_count }} views</span>
+                    </div>
+                    {% if news.updated_at != news.created_at %}
+                    <div class="meta-item">
+                        <span class="meta-icon">🔄</span>
+                        <span class="meta-text">Updated {{ news.updated_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
+            
+            <div class="article-content">
+                {% if news.excerpt %}
+                <div class="article-excerpt">
+                    <p><strong>{{ news.excerpt }}</strong></p>
+                </div>
+                {% endif %}
+                
+                <div class="article-body">
+                    {{ news.content|replace('\n', '<br>')|e }}
+                </div>
+            </div>
+            
+            <footer class="article-footer">
+                <div class="article-actions">
+                    <a href="{{ url_for('news') }}" class="btn btn-secondary">
+                        ← Back to News
+                    </a>
+                    <button onclick="window.print()" class="btn btn-outline">
+                        🖨️ Print Article
+                    </button>
+                </div>
+            </footer>
+        </article>
+        
+        
+        {% if related_news %}
+        <aside class="related-news">
+            <h3>📰 Related Articles</h3>
+            <div class="related-list">
+                {% for related in related_news %}
+                <div class="related-item">
+                    <h4>
+                        <a href="{{ url_for('news_detail', news_id=related.id) }}">{{ related.title }}</a>
+                    </h4>
+                    <p class="related-excerpt">{{ related.short_excerpt }}</p>
+                    <div class="related-meta">
+                        <span class="related-date">{{ related.formatted_date }}</span>
+                        <span class="related-views">{{ related.view_count }} views</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </aside>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.breadcrumb {
+    margin: 1rem 0 2rem 0;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.breadcrumb a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    margin: 0 0.5rem;
+    color: var(--text-secondary);
+}
+
+.breadcrumb-current {
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+
+.news-detail-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 3rem;
+    margin-bottom: 3rem;
+}
+
+.news-article {
+    background: white;
+    border: 1px solid #000000;
+    padding: 2rem;
+}
+
+.featured-badge {
+    background: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: bold;
+    border: 1px solid #000000;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+
+.article-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #dc3545;
+}
+
+.article-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 2rem;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.meta-icon {
+    font-size: 1rem;
+}
+
+.meta-text {
+    font-weight: 500;
+}
+
+.article-content {
+    margin-bottom: 2rem;
+}
+
+.article-excerpt {
+    background: #f8f9fa;
+    border: 1px solid #000000;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.article-body {
+    line-height: 1.8;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.article-body p {
+    margin-bottom: 1.5rem;
+}
+
+.article-footer {
+    padding-top: 2rem;
+    border-top: 1px solid #dc3545;
+}
+
+.article-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #000000;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+    color: white;
+}
+
+.btn-outline {
+    background: white;
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    background: #f8f9fa;
+    color: var(--text-primary);
+}
+
+.related-news {
+    background: white;
+    border: 1px solid #000000;
+    padding: 1.5rem;
+    height: fit-content;
+}
+
+.related-news h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dc3545;
+}
+
+.related-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.related-item {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.related-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.related-item h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.related-item h4 a {
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.related-item h4 a:hover {
+    color: #007bff;
+}
+
+.related-excerpt {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.related-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.related-date {
+    font-weight: 500;
+}
+
+.related-views {
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .news-detail-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .article-title {
+        font-size: 1.5rem;
+    }
+    
+    .article-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .article-actions {
+        flex-direction: column;
+    }
+    
+    .news-article {
+        padding: 1.5rem;
+    }
+    
+    .related-news {
+        padding: 1rem;
+    }
+}
+
+@media print {
+    .breadcrumb,
+    .article-actions,
+    .related-news {
+        display: none;
+    }
+    
+    .news-detail-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .news-article {
+        border: none;
+        padding: 0;
+    }
+    
+    .article-title {
+        font-size: 1.5rem;
+    }
+    
+    .article-body {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

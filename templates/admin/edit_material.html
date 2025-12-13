@@ -1,0 +1,578 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Edit Material - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Edit Material</h1>
+        <a href="{{ url_for('admin_materials') }}" class="btn btn-secondary">
+            <span class="btn-icon">←</span>
+            Back to Materials
+        </a>
+    </div>
+    
+    <div class="admin-form-container">
+        <form method="POST" enctype="multipart/form-data" class="admin-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-group">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-input", placeholder="Enter material title") }}
+                    {% if form.title.errors %}
+                        <div class="form-errors">
+                            {% for error in form.title.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-textarea", placeholder="Enter material description", rows="4") }}
+                    {% if form.description.errors %}
+                        <div class="form-errors">
+                            {% for error in form.description.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                    
+                    <div class="form-group">
+                        {{ form.category_id.label(class="form-label") }}
+                        {{ form.category_id(class="form-select") }}
+                        {% if form.category_id.errors %}
+                            <div class="form-errors">
+                                {% for error in form.category_id.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="form-section">
+                <h3>Material Type</h3>
+                <div class="form-group checkbox-group">
+                    {{ form.is_video(class="form-checkbox", id="isVideoCheckbox") }}
+                    {{ form.is_video.label(class="form-checkbox-label", for="isVideoCheckbox") }}
+                    <small class="form-help">Check this box if this is a video material</small>
+                </div>
+            </div>
+            
+            
+            <div class="form-section" id="documentSection" style="background: #e6f2ff; border-left: 4px solid #0066cc; {% if material.is_video %}display: none;{% endif %}">
+                <h3>📄 Document/File Upload</h3>
+                <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.875rem;">Use this section for PDF, DOC, DOCX, TXT, PPT, XLS and other document files</p>
+                
+                {% if material.file_path and not material.is_video %}
+                <div class="current-file">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                    <label class="form-label">Current File:</label>
+                    <p class="file-info">{{ material.file_path.split('/')[-1] }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin_delete_material_file', material_id=material.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this file? This action cannot be undone.');">
+                            <input type="hidden" name="file_type" value="file">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    {{ form.file.label(class="form-label") }}
+                    {{ form.file(class="form-file", id="documentFile") }}
+                    <small class="form-help">Upload new document file (PDF, DOC, DOCX, TXT, PPT, XLS, etc.) - Leave empty to keep current file</small>
+                    {% if form.file.errors %}
+                        <div class="form-errors">
+                            {% for error in form.file.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if material.image_path %}
+                <div class="current-file">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                    <label class="form-label">Current Image:</label>
+                    <p class="file-info">{{ material.image_path.split('/')[-1] }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin_delete_material_file', material_id=material.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this image? This action cannot be undone.');">
+                            <input type="hidden" name="file_type" value="image">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    {{ form.image.label(class="form-label") }}
+                    {{ form.image(class="form-file", id="documentImage") }}
+                    <small class="form-help">Upload new cover image for the document - Leave empty to keep current image</small>
+                    {% if form.image.errors %}
+                        <div class="form-errors">
+                            {% for error in form.image.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.file_size.label(class="form-label") }}
+                        {{ form.file_size(class="form-input", placeholder="e.g., 2.5 MB", id="documentFileSize") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.file_format.label(class="form-label") }}
+                        {{ form.file_format(class="form-input", placeholder="e.g., PDF", id="documentFileFormat") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.pages.label(class="form-label") }}
+                        {{ form.pages(class="form-input", placeholder="Number of pages", id="documentPages") }}
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="form-section" id="videoSection" style="{% if not material.is_video %}display: none;{% endif %} background: #ffe6e6; border-left: 4px solid #cc0000;">
+                <h3>🎥 Video Upload</h3>
+                <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.875rem;">Use this section for MP4, WEBM, AVI, MOV, WMV, FLV, MKV, M4V, 3GP video files</p>
+                
+                {% if material.file_path and material.is_video %}
+                <div class="current-file">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <label class="form-label">Current Video:</label>
+                            <p class="file-info">{{ material.file_path.split('/')[-1] }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin_delete_material_file', material_id=material.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this video? This action cannot be undone.');">
+                            <input type="hidden" name="file_type" value="video">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="videoFile">Video File</label>
+                    <input type="file" name="file" class="form-file" id="videoFile" accept="video/*">
+                    <small class="form-help">Upload new video file (MP4, WEBM, AVI, MOV, WMV, FLV, MKV, M4V, 3GP) - Leave empty to keep current video</small>
+                    {% if form.file.errors %}
+                        <div class="form-errors">
+                            {% for error in form.file.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if material.video_thumbnail %}
+                <div class="current-file">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <label class="form-label">Current Thumbnail:</label>
+                            <p class="file-info">{{ material.video_thumbnail.split('/')[-1] if material.video_thumbnail else 'None' }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin_delete_material_file', material_id=material.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this thumbnail? This action cannot be undone.');">
+                            <input type="hidden" name="file_type" value="thumbnail">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    {{ form.video_thumbnail.label(class="form-label") }}
+                    {{ form.video_thumbnail(class="form-file", id="videoThumbnail") }}
+                    <small class="form-help">Upload new video thumbnail/preview image - Leave empty to keep current thumbnail</small>
+                    {% if form.video_thumbnail.errors %}
+                        <div class="form-errors">
+                            {% for error in form.video_thumbnail.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="videoFileSize">{{ form.file_size.label.text }}</label>
+                        <input type="text" name="file_size" class="form-input" placeholder="e.g., 15.2 MB" id="videoFileSize" value="{{ material.file_size if material.file_size else '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="videoFileFormat">{{ form.file_format.label.text }}</label>
+                        <input type="text" name="file_format" class="form-input" placeholder="e.g., MP4, WEBM" id="videoFileFormat" value="{{ material.file_format if material.file_format else '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.video_duration.label(class="form-label") }}
+                        {{ form.video_duration(class="form-input", placeholder="e.g., 5:30", id="videoDuration") }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.video_quality.label(class="form-label") }}
+                        {{ form.video_quality(class="form-input", placeholder="e.g., HD, 4K", id="videoQuality") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="videoPages">{{ form.pages.label.text }}</label>
+                        <input type="number" name="pages" class="form-input" placeholder="Leave 0 for videos" id="videoPages" min="0" value="0">
+                    </div>
+                </div>
+                    </div>
+                    
+            
+            <div class="form-section">
+                <h3>Settings</h3>
+                        <div class="form-group checkbox-group">
+                    {{ form.is_digital(class="form-checkbox") }}
+                    {{ form.is_digital.label(class="form-checkbox-label") }}
+                        </div>
+                    
+                    <div class="form-group checkbox-group">
+                        {{ form.is_active(class="form-checkbox") }}
+                        {{ form.is_active.label(class="form-checkbox-label") }}
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('admin_materials') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* Optimized spacing for compact layout */
+.admin-form-container {
+    max-width: 1200px;
+    padding: 1rem;
+}
+
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-section {
+    margin-bottom: 0.75rem;
+    padding: 1rem;
+    border: 1px solid #000000;
+    background: white;
+}
+
+.form-section h3 {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-group {
+    margin-bottom: 0.5rem;
+}
+
+.form-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.form-input,
+.form-textarea,
+.form-select,
+.form-file {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-help {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    color: #666;
+}
+
+.checkbox-group {
+    margin-bottom: 0.5rem;
+}
+
+.form-checkbox-label {
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #000000;
+    gap: 0.5rem;
+}
+
+.current-file {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: var(--surface-color);
+    border: 1px solid #000000;
+    font-size: 0.875rem;
+}
+
+.current-file .form-label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.file-info {
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    margin: 0;
+}
+
+/* Compact video/document sections */
+#documentSection,
+#videoSection {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+#documentSection p,
+#videoSection p {
+    margin-bottom: 0.75rem;
+    font-size: 0.8125rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .form-section {
+        padding: 0.75rem;
+    }
+}
+</style>
+
+<script>
+// File upload preview
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    input.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Show file info
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'file-info';
+            fileInfo.innerHTML = `
+                <small>Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+            `;
+            
+            // Remove existing file info
+            const existing = this.parentNode.querySelector('.file-info');
+            if (existing) existing.remove();
+            
+            this.parentNode.appendChild(fileInfo);
+        }
+    });
+});
+
+// Function to estimate pages based on file type and size
+function estimatePages(extension, fileSize) {
+    const fileSizeMB = fileSize / 1024 / 1024;
+    
+    // PDF page estimation - more accurate based on typical PDF sizes
+    if (extension === 'pdf') {
+        // Text-heavy PDF: ~50KB per page, Image-heavy: ~200KB per page
+        // Use 75KB per page as average
+        return Math.max(1, Math.round(fileSizeMB * 13.3)); // 1024/75 ≈ 13.3
+    }
+    
+    // Word document estimation - more accurate
+    if (['doc', 'docx'].includes(extension)) {
+        // Typical Word doc: ~25KB per page
+        return Math.max(1, Math.round(fileSizeMB * 40)); // 1024/25 = 40.96
+    }
+    
+    // PowerPoint estimation - more accurate
+    if (['ppt', 'pptx'].includes(extension)) {
+        // Typical PowerPoint: ~150KB per slide
+        return Math.max(1, Math.round(fileSizeMB * 6.8)); // 1024/150 ≈ 6.8
+    }
+    
+    // Excel estimation - more accurate
+    if (['xls', 'xlsx'].includes(extension)) {
+        // Typical Excel: ~30KB per sheet
+        return Math.max(1, Math.round(fileSizeMB * 34)); // 1024/30 ≈ 34.1
+    }
+    
+    // Text file estimation - more accurate
+    if (extension === 'txt') {
+        // Typical text: ~1.5KB per page (60 chars × 25 lines)
+        return Math.max(1, Math.round(fileSizeMB * 683)); // 1024/1.5 ≈ 683
+    }
+    
+    // For other document types, make a more accurate estimate
+    if (['rtf', 'odt', 'ods', 'odp'].includes(extension)) {
+        // OpenDocument formats: ~40KB per page
+        return Math.max(1, Math.round(fileSizeMB * 25.6)); // 1024/40 = 25.6
+    }
+    
+    // For images, estimate based on typical document page size
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
+        // Assume each image is roughly one page
+        return 1;
+    }
+    
+    // No estimation for other file types
+    return 0;
+}
+
+// Toggle between document and video sections
+document.addEventListener('DOMContentLoaded', function() {
+    const isVideoCheckbox = document.getElementById('isVideoCheckbox');
+    const documentSection = document.getElementById('documentSection');
+    const videoSection = document.getElementById('videoSection');
+    const documentFile = document.getElementById('documentFile');
+    const videoFile = document.getElementById('videoFile');
+    
+    function toggleSections() {
+        if (isVideoCheckbox && isVideoCheckbox.checked) {
+            // Show video section, hide document section
+            if (videoSection) videoSection.style.display = 'block';
+            if (documentSection) documentSection.style.display = 'none';
+            
+            // Disable document file input
+            if (documentFile) {
+                documentFile.disabled = true;
+                documentFile.name = '';
+            }
+            // Enable video file input
+            if (videoFile) {
+                videoFile.disabled = false;
+                videoFile.name = 'file';
+            }
+        } else {
+            // Show document section, hide video section
+            if (documentSection) documentSection.style.display = 'block';
+            if (videoSection) videoSection.style.display = 'none';
+            
+            // Enable document file input
+            if (documentFile) {
+                documentFile.disabled = false;
+                documentFile.name = 'file';
+            }
+            // Disable video file input
+            if (videoFile) {
+                videoFile.disabled = true;
+                videoFile.name = '';
+            }
+        }
+    }
+    
+    // Add event listener to checkbox
+    if (isVideoCheckbox) {
+        isVideoCheckbox.addEventListener('change', toggleSections);
+        toggleSections(); // Set initial state
+    }
+    
+    // Auto-calculate file size and detect format for document files
+    if (documentFile) {
+        documentFile.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const sizeInMB = (file.size / 1024 / 1024).toFixed(2);
+                const fileSizeInput = document.getElementById('documentFileSize');
+        if (fileSizeInput) {
+            fileSizeInput.value = `${sizeInMB} MB`;
+        }
+        
+        // Auto-detect file format
+        const extension = file.name.split('.').pop().toLowerCase();
+                const fileFormatInput = document.getElementById('documentFileFormat');
+        if (fileFormatInput) {
+                    fileFormatInput.value = extension.toUpperCase();
+                }
+                
+                // Auto-estimate pages
+                const estimatedPages = estimatePages(extension, file.size);
+                const pagesInput = document.getElementById('documentPages');
+                if (pagesInput && estimatedPages > 0) {
+                    pagesInput.value = estimatedPages;
+                }
+                
+                // Auto-switch sections based on file type
+                if (isVideoCheckbox) {
+        const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v', '3gp'];
+                    if (videoExtensions.includes(extension)) {
+                        isVideoCheckbox.checked = true;
+                        toggleSections();
+                    } else {
+                        isVideoCheckbox.checked = false;
+                        toggleSections();
+                    }
+                }
+            }
+        });
+    }
+    
+    // Auto-calculate file size and detect format for video files
+    if (videoFile) {
+        videoFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const sizeInMB = (file.size / 1024 / 1024).toFixed(2);
+                const fileSizeInput = document.getElementById('videoFileSize');
+                if (fileSizeInput) {
+                    fileSizeInput.value = `${sizeInMB} MB`;
+                }
+                
+                // Auto-detect file format
+                const extension = file.name.split('.').pop().toLowerCase();
+                const fileFormatInput = document.getElementById('videoFileFormat');
+                if (fileFormatInput) {
+                    fileFormatInput.value = extension.toUpperCase();
+        }
+        
+        // Auto-detect video quality based on file size
+            const fileSizeMB = file.size / 1024 / 1024;
+            let quality = 'Low';
+            if (fileSizeMB > 100) quality = 'HD';
+            else if (fileSizeMB > 50) quality = 'SD';
+                const videoQualityInput = document.getElementById('videoQuality');
+            if (videoQualityInput) {
+                videoQualityInput.value = quality;
+            }
+        }
+        });
+    }
+});
+</script>
+{% endblock %}

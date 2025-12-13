@@ -1,0 +1,99 @@
+<!-- Cookie Consent Banner -->
+<div id="cookie-consent-banner" class="cookie-consent-banner" role="dialog" aria-labelledby="cookie-consent-title" aria-live="polite" style="display: none;">
+    <div class="cookie-consent-content">
+        <div class="cookie-consent-text">
+            <h3 id="cookie-consent-title" class="cookie-consent-title">🍪 Cookie Consent</h3>
+            <p class="cookie-consent-message">
+                We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. 
+                By clicking "Accept All", you consent to our use of cookies. 
+                <a href="/privacy-policy" class="cookie-consent-link">Learn more</a> about our cookie policy.
+            </p>
+        </div>
+        <div class="cookie-consent-actions">
+            <a href="/cookie-preferences" class="btn btn-secondary btn-sm" id="cookie-consent-preferences" aria-label="Manage cookie preferences">
+                Preferences
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" id="cookie-consent-decline" aria-label="Decline non-essential cookies">
+                Decline
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="cookie-consent-accept" aria-label="Accept all cookies">
+                Accept All
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cookie Preferences Modal -->
+<div id="cookie-preferences-modal" class="cookie-preferences-modal" role="dialog" aria-labelledby="cookie-preferences-title" aria-modal="true" style="display: none;">
+    <div class="cookie-preferences-content">
+        <div class="cookie-preferences-header">
+            <h2 id="cookie-preferences-title">Cookie Preferences</h2>
+            <button type="button" class="cookie-preferences-close" id="cookie-preferences-close" aria-label="Close cookie preferences">
+                ×
+            </button>
+        </div>
+        <div class="cookie-preferences-body">
+            <p class="cookie-preferences-intro">
+                Manage your cookie preferences. You can enable or disable different types of cookies below.
+            </p>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-essential" checked disabled aria-label="Essential cookies (required)">
+                        <span class="cookie-category-name">Essential Cookies</span>
+                        <span class="cookie-category-badge">Always Active</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies are necessary for the website to function and cannot be switched off. They are usually set in response to actions made by you such as setting your privacy preferences, logging in, or filling in forms.
+                </p>
+            </div>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-analytics" aria-label="Analytics cookies">
+                        <span class="cookie-category-name">Analytics Cookies</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This helps us improve our website's performance and user experience.
+                </p>
+            </div>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-functional" aria-label="Functional cookies">
+                        <span class="cookie-category-name">Functional Cookies</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies enable enhanced functionality and personalization, such as remembering your preferences and settings.
+                </p>
+            </div>
+            
+            <div class="cookie-category">
+                <div class="cookie-category-header">
+                    <label class="cookie-category-label">
+                        <input type="checkbox" id="cookie-marketing" aria-label="Marketing cookies">
+                        <span class="cookie-category-name">Marketing Cookies</span>
+                    </label>
+                </div>
+                <p class="cookie-category-description">
+                    These cookies are used to deliver advertisements and track campaign effectiveness. They may be set by advertising partners.
+                </p>
+            </div>
+        </div>
+        <div class="cookie-preferences-footer">
+            <button type="button" class="btn btn-secondary" id="cookie-preferences-save" aria-label="Save cookie preferences">
+                Save Preferences
+            </button>
+            <button type="button" class="btn btn-primary" id="cookie-preferences-accept-all" aria-label="Accept all cookies">
+                Accept All
+            </button>
+        </div>
+    </div>
+</div>
+

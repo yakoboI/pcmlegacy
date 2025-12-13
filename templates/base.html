@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block description %}Physics, Chemistry, and Mathematics resources for O-Level, A-Level, and University students{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}e-materials, digital books, courses, learning, education{% endblock %}">
+    
+    
+    <link rel="canonical" href="{% block canonical %}{{ request.url }}{% endblock %}">
+    
+    
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Pcmlegacy{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Physics, Chemistry, and Mathematics resources for O-Level, A-Level, and University students{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='images/favicon.svg') }}{% endblock %}">
+    <meta property="og:site_name" content="Pcmlegacy">
+    <meta property="og:locale" content="en_US">
+    
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{% block twitter_url %}{{ request.url }}{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}Pcmlegacy{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Physics, Chemistry, and Mathematics resources for O-Level, A-Level, and University students{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='images/favicon.svg') }}{% endblock %}">
+    
+    
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    
+    <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}" as="style">
+    
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/badges.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cookie-consent.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}" media="print">
+    
+    
+    
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    
+    <title>{% block title %}Pcmlegacy{% endblock %}</title>
+    
+    
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "{% block schema_type %}WebSite{% endblock %}",
+        "name": "Pcmlegacy",
+        "url": "{{ request.url_root.rstrip('/') }}",
+        "description": "{% block schema_description %}Physics, Chemistry, and Mathematics resources for O-Level, A-Level, and University students{% endblock %}",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "{{ request.url_root.rstrip('/') }}/search?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    {% block structured_data %}{% endblock %}
+</head>
+<body>
+    <!-- Cookie Consent Banner -->
+    {% include 'components/cookie_consent.html' %}
+    
+    <!-- Loading Components -->
+    {% include 'components/loading.html' %}
+    
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="{{ url_for('index') }}" class="logo">
+                    <img src="{{ url_for('static', filename='images/favicon.svg') }}" alt="Pcmlegacy" class="logo-icon" width="24" height="24">
+                    Pcmlegacy
+                </a>
+                
+                
+                <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                    ☰
+                </button>
+                
+                
+                <nav class="nav-menu" id="navMenu">
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="{{ url_for('index') }}" class="nav-link">🏠 Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('search') }}" class="nav-link">🔍 Search</a>
+                        </li>
+                        {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin %}
+                        <li class="nav-item">
+                            <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                                ⚙️ Admin
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" id="userDropdown" role="button">
+                                👤 {{ current_user.first_name }} ▼
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                    <span class="dropdown-icon">👤</span>
+                                    <span class="dropdown-text">Profile</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('edit_profile') }}">
+                                    <span class="dropdown-icon">✏️</span>
+                                    <span class="dropdown-text">Edit Profile</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('change_password') }}">
+                                    <span class="dropdown-icon">🔒</span>
+                                    <span class="dropdown-text">Change Password</span>
+                                </a></li>
+                                {% if not current_user.is_admin %}
+                                <li><a class="dropdown-item" href="{{ url_for('subscriptions') }}">
+                                    <span class="dropdown-icon">⭐</span>
+                                    <span class="dropdown-text">Subscriptions</span>
+                                </a></li>
+                                <li><span class="dropdown-item dropdown-item-static">
+                                    <span class="dropdown-icon">👥</span>
+                                    <span class="dropdown-text">Total Users: {{ total_users }}</span>
+                                </span></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item logout-link" href="{{ url_for('logout') }}">
+                                    <span class="dropdown-icon">🚪</span>
+                                    <span class="dropdown-text">Logout</span>
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a href="{{ url_for('login') }}" class="nav-link">🔑 Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('register') }}" class="nav-link">📝 Register</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    
+    <main class="main" id="main-content" role="main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages" id="flash-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-dismiss="alert" aria-label="Close alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">© 2024-<span id="currentYear"></span> Pcmlegacy. Physics, Chemistry & Mathematics resources.</p>
+                <p class="footer-links">
+                    <a href="/terms-of-service">Terms of Service</a> | 
+                    <a href="/privacy-policy">Privacy Policy</a> | 
+                    <a href="/api-documentation">API Docs</a> | 
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('help_request') }}">Admin Help</a> | 
+                    {% else %}
+                    <a href="{{ url_for('login') }}?next={{ url_for('help_request') }}">Admin Help</a> | 
+                    {% endif %}
+                    <a href="{{ url_for('top_users') }}">Top 10 Users</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    
+    <!-- Browser Compatibility Polyfills - Load first for older browser support -->
+    <script src="{{ url_for('static', filename='js/polyfills.js') }}?v=1.0"></script>
+    
+    <!-- Global Error Handler -->
+    <script src="{{ url_for('static', filename='js/error-handler.js') }}?v=1.0"></script>
+    
+    <!-- Cookie Consent -->
+    <script src="{{ url_for('static', filename='js/cookie-consent.js') }}?v=1.0"></script>
+    
+    <!-- Loading States -->
+    <script src="{{ url_for('static', filename='js/loading-states.js') }}?v=1.0"></script>
+    
+    <!-- Accessibility Enhancements -->
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}?v=1.0"></script>
+    
+    <!-- Safe Interaction Handlers -->
+    <script src="{{ url_for('static', filename='js/interactions.js') }}?v=1.0"></script>
+    
+    <!-- Form Validation -->
+    <script src="{{ url_for('static', filename='js/form-validation.js') }}?v=1.0"></script>
+    
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=3.0"></script>
+        <script>
+            // Update current year dynamically
+            const currentYearElement = document.getElementById('currentYear');
+            if (currentYearElement) {
+                currentYearElement.textContent = new Date().getFullYear();
+            }
+
+            // User dropdown toggle
+            document.addEventListener('DOMContentLoaded', function() {
+                const userDropdown = document.getElementById('userDropdown');
+                if (userDropdown) {
+                    const dropdown = userDropdown.nextElementSibling;
+                    
+                    // Check if dropdown element exists; silently skip if absent (e.g., on auth pages)
+                    if (!dropdown) {
+                        return;
+                    }
+                    
+                    // Set initial ARIA attributes
+                    userDropdown.setAttribute('aria-expanded', 'false');
+                    userDropdown.setAttribute('aria-haspopup', 'true');
+                    
+                    let isProcessing = false;
+                    
+                    function openDropdown() {
+                        dropdown.classList.add('show');
+                        userDropdown.setAttribute('aria-expanded', 'true');
+                        
+                        // On desktop, position dropdown as fixed overlay aligned with button
+                        if (window.innerWidth > 768) {
+                            const rect = userDropdown.getBoundingClientRect();
+                            dropdown.style.top = (rect.bottom + 5) + 'px';
+                            dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                        }
+                        
+                        // Prevent body scroll on mobile when dropdown is open
+                        if (window.innerWidth <= 768) {
+                            document.body.style.overflow = 'hidden';
+                        }
+                    }
+                    
+                    function closeDropdown() {
+                        dropdown.classList.remove('show');
+                        userDropdown.setAttribute('aria-expanded', 'false');
+                        // Restore body scroll
+                        document.body.style.overflow = '';
+                    }
+                    
+                    userDropdown.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if (isProcessing) return;
+                        isProcessing = true;
+                        
+                        const isExpanded = dropdown.classList.contains('show');
+
+                        if (isExpanded) {
+                            closeDropdown();
+                        } else {
+                            openDropdown();
+                        }
+                        
+                        // Reset processing flag after a short delay
+                        setTimeout(() => {
+                            isProcessing = false;
+                        }, 100);
+                    });
+
+                    // Close dropdown when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (dropdown.classList.contains('show') &&
+                            !userDropdown.contains(e.target) && 
+                            !dropdown.contains(e.target)) {
+                            closeDropdown();
+                        }
+                    });
+                    
+                    // Close dropdown with Escape key
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape' && dropdown.classList.contains('show')) {
+                            closeDropdown();
+                            userDropdown.focus();
+                        }
+                    });
+                    
+                    // Reposition dropdown on window resize (desktop only)
+                    window.addEventListener('resize', function() {
+                        if (window.innerWidth > 768 && dropdown.classList.contains('show')) {
+                            const rect = userDropdown.getBoundingClientRect();
+                            dropdown.style.top = (rect.bottom + 5) + 'px';
+                            dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                        }
+                    });
+                    
+                    // Close dropdown when clicking on a link inside
+                    dropdown.addEventListener('click', function(e) {
+                        if (e.target.tagName === 'A' || e.target.closest('a')) {
+                            setTimeout(() => {
+                                closeDropdown();
+                            }, 100);
+                        }
+                    });
+                    
+                    // Close dropdown when window is resized to desktop
+                    window.addEventListener('resize', function() {
+                        if (window.innerWidth > 768 && dropdown.classList.contains('show')) {
+                            closeDropdown();
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    <style>
+    /* Global Mobile Responsive Improvements */
+    @media (max-width: 768px) {
+        /* Prevent horizontal scroll */
+        * {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            position: relative;
+        }
+        
+        .container,
+        .main,
+        section,
+        .materials-grid,
+        .material-card,
+        .material-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Ensure all form inputs are mobile-friendly */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        input[type="tel"],
+        input[type="url"],
+        input[type="search"],
+        textarea,
+        select {
+            font-size: 1rem !important; /* Respect device font size, prevents zoom on iOS */
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+        }
+        
+        /* Mobile-friendly buttons */
+        .btn {
+            min-height: 44px; /* Touch target size */
+            padding: 0.75rem 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Mobile-friendly tables */
+        .table-container,
+        table {
+            overflow-x: auto;
+            display: block;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Stack form rows on mobile */
+        .form-row {
+            flex-direction: column !important;
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+        }
+        
+        /* Full-width form actions on mobile */
+        .form-actions {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+        }
+        
+        /* Responsive containers */
+        .container {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            max-width: 100%;
+        }
+        
+        /* Mobile-friendly cards */
+        .card {
+            padding: 1rem;
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        /* Images responsive with quality preservation */
+        img {
+            max-width: 100%;
+            height: auto;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: auto;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        
+        /* Material images - maintain quality on small screens */
+        .material-img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: auto;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        
+        /* Text wrapping */
+        h1, h2, h3, h4, h5, h6, p, span, a {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        /* Extra small screens */
+        h1 {
+            font-size: 1.5rem;
+        }
+        
+        h2 {
+            font-size: 1.25rem;
+        }
+        
+        h3 {
+            font-size: 1.125rem;
+        }
+        
+        .btn {
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+        }
+        
+        .container {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
+    </style>
+    
+    
+    <script>
+    // Load flash messages after main content to improve LCP
+    document.addEventListener('DOMContentLoaded', function() {
+        const flashMessages = document.getElementById('flash-messages');
+        if (flashMessages) {
+            // Use double requestAnimationFrame to ensure main content renders first
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    flashMessages.style.display = 'block';
+                    // Auto-hide after 5 seconds
+                    setTimeout(function() {
+                        const alerts = flashMessages.querySelectorAll('.alert');
+                        alerts.forEach(alert => {
+                            alert.style.opacity = '0';
+                            setTimeout(() => alert.remove(), 300);
+                        });
+                    }, 5000);
+                });
+            });
+        }
+    });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

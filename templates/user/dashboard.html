@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <div class="dashboard-header">
+        <h1>📊 My Dashboard</h1>
+        <p>Welcome back, {{ current_user.first_name }}! Manage your downloads and subscription.</p>
+    </div>
+
+    
+    <div class="dashboard-tabs">
+        <button class="tab-button active" data-tab="downloads">
+            <span class="icon icon-download icon-sm icon-mr"></span>Downloads
+        </button>
+        {% if not current_user.is_admin %}
+        <button class="tab-button" data-tab="subscription">
+            <span class="icon icon-star icon-sm icon-mr"></span>Subscription Status
+        </button>
+        {% endif %}
+        <button class="tab-button" data-tab="profile">
+            <span class="icon icon-user icon-sm icon-mr"></span>Profile Settings
+        </button>
+    </div>
+
+    
+    <div id="downloads-tab" class="tab-content active">
+        <div class="tab-header">
+            <h2><span class="icon icon-download icon-lg icon-mr"></span>Download History</h2>
+            <div class="tab-actions">
+                <button class="btn btn-secondary" data-action="refresh-downloads" aria-label="Refresh downloads">
+                    <span class="icon icon-refresh icon-sm icon-mr"></span>Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="downloads-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📥</div>
+                <div class="stat-content">
+                    <h3>{{ downloads|length }}</h3>
+                    <p>Total Downloads</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <h3>{{ subscription_downloads|length if subscription_downloads else 0 }}</h3>
+                    <p>Subscription Downloads</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <h3>{{ materials_accessed_count }}</h3>
+                    <p>Materials Accessed</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="downloads-table-container">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Type</th>
+                        <th>Downloads</th>
+                        <th>Last Downloaded</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for download in downloads %}
+                    <tr>
+                        <td class="material-cell">
+                            <div class="material-info">
+                                <strong>{{ download.material.title }}</strong>
+                                <small>{{ download.material.category.name }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="type-badge type-{{ download.download_type }}">
+                                {% if download.download_type == 'video' %}
+                                    🎥 Video
+                                {% else %}
+                                    📄 Document
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ download.download_count }}</td>
+                        <td>{{ download.last_downloaded.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="action-buttons">
+                            <a href="{{ url_for('material_detail', material_id=download.material.id) }}" class="btn btn-sm btn-primary">
+                                👁️ View
+                            </a>
+                            <a href="{{ url_for('download_material', material_id=download.material.id) }}" class="btn btn-sm btn-success">
+                                📥 Download
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="no-data">
+                            <div class="empty-state">
+                                <div class="empty-icon">📥</div>
+                                <h3>No Downloads Yet</h3>
+                                <p>Start exploring our materials to see your download history here.</p>
+                                <a href="{{ url_for('index') }}" class="btn btn-primary">Browse Materials</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    
+    {% if not current_user.is_admin %}
+    <div id="subscription-tab" class="tab-content">
+        <div class="tab-header">
+            <h2>⭐ Subscription Status</h2>
+        </div>
+        
+        <div class="subscription-info">
+            {% set access_status = current_user.get_access_status() %}
+            {% if access_status == "admin" %}
+                <div class="status-badge admin">👑 ADMIN ACCESS</div>
+                <p>You have full administrative access to all materials.</p>
+            {% elif access_status.startswith("subscription_") %}
+                {% set days_left = access_status.split("_")[1] %}
+                <div class="status-badge subscription">⭐ SUBSCRIPTION ACTIVE</div>
+                <p>{{ days_left }} days remaining in your subscription.</p>
+                
+                {% set active_subscription = current_user.subscriptions.filter(Subscription.is_active == True).first() %}
+                {% if active_subscription %}
+                    <div class="subscription-details">
+                        <h4>Subscription Details</h4>
+                        <div class="detail-row">
+                            <span>Plan:</span>
+                            <span>{{ active_subscription.plan.name if active_subscription.plan else 'Custom Plan' }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Materials Used:</span>
+                            <span>{{ active_subscription.materials_accessed }} / {{ active_subscription.max_materials }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Expires:</span>
+                            <span>{{ active_subscription.end_date.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Status:</span>
+                            <span class="status-text">{{ active_subscription.status_text }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="subscription-actions">
+                    <a href="{{ url_for('subscriptions') }}" class="btn btn-secondary">View All Plans</a>
+                </div>
+            {% elif access_status == "limited" %}
+                <div class="status-badge limited">🆓 1 FREE VIEW</div>
+                <p>You get one free first view per material. After viewing, payment is required to access again.</p>
+                <div class="limited-access-info">
+                    <h4>Access Rules:</h4>
+                    <ul>
+                        <li>One free first view per material</li>
+                        <li>After first view, payment required via MPesa</li>
+                        <li>Subscribe for unlimited access to all materials</li>
+                    </ul>
+                </div>
+                <div class="subscription-actions">
+                    <a href="{{ url_for('subscriptions') }}" class="btn btn-primary">Subscribe for Unlimited Access</a>
+                </div>
+            {% else %}
+                <div class="status-badge expired">🔒 PAYMENT REQUIRED</div>
+                <p>Subscribe to continue accessing materials.</p>
+                <div class="subscription-actions">
+                    <a href="{{ url_for('subscriptions') }}" class="btn btn-primary">Choose Subscription Plan</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    
+    <div id="profile-tab" class="tab-content">
+        <div class="tab-header">
+            <h2>👤 Profile Settings</h2>
+        </div>
+
+        <div class="profile-settings">
+            <div class="profile-card">
+                <h3>Account Information</h3>
+                <div class="profile-info">
+                    <div class="info-item">
+                        <label>Name:</label>
+                        <span>{{ current_user.get_full_name() }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email:</label>
+                        <span>{{ current_user.email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Phone:</label>
+                        <span>{{ current_user.phone or 'Not provided' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Member Since:</label>
+                        <span>{{ current_user.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
+                        ✏️ Edit Profile
+                    </a>
+                    <a href="{{ url_for('change_password') }}" class="btn btn-secondary">
+                        🔒 Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<style>
+.subscription-info {
+    background: white;
+    padding: 2rem;
+    border-radius: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 0;
+    font-weight: 600;
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+}
+
+.status-badge.admin {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.trial {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-badge.subscription {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.limited {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.expired {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.limited-access-info {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.limited-access-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: #374151;
+    font-size: 1rem;
+}
+
+.limited-access-info ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #6b7280;
+}
+
+.limited-access-info li {
+    margin-bottom: 0.25rem;
+}
+
+.subscription-details {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0;
+    margin: 1.5rem 0;
+    text-align: left;
+}
+
+.subscription-details h4 {
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row span:first-child {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.detail-row span:last-child {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.status-text {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.subscription-actions {
+    margin-top: 1.5rem;
+}
+
+.subscription-actions .btn {
+    margin: 0 0.5rem;
+}
+</style>
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard-tabs.js') }}?v=1.0"></script>
+
+<style>
+/* Mobile Responsive Styles for Dashboard */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .dashboard-tabs {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .tab-button {
+        flex: 1;
+        min-width: calc(50% - 0.25rem);
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .tab-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .tab-actions {
+        width: 100%;
+    }
+    
+    .tab-actions .btn {
+        width: 100%;
+    }
+    
+    .downloads-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .downloads-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .downloads-table {
+        min-width: 600px;
+        font-size: 0.875rem;
+    }
+    
+    .downloads-table th,
+    .downloads-table td {
+        padding: 0.5rem;
+    }
+    
+    .subscription-card {
+        padding: 1rem;
+    }
+    
+    .subscription-info {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .profile-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .tab-button {
+        min-width: 100%;
+        font-size: 0.75rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .downloads-table {
+        font-size: 0.75rem;
+        min-width: 500px;
+    }
+}
+</style>
+{% endblock %}

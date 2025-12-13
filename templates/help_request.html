@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Help - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="help-request-page">
+    <div class="page-header">
+        <h1>💬 Admin Help</h1>
+        <p>Submit your questions, suggestions, or report issues. Admin will respond directly to your profile.</p>
+    </div>
+    
+    <div class="form-container">
+        <div class="form-card">
+            <form method="POST" class="help-request-form">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    {{ form.subject.label(class="form-label") }}
+                    {{ form.subject(class="form-control") }}
+                    {% if form.subject.errors %}
+                        <div class="form-errors">
+                            {% for error in form.subject.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.message.label(class="form-label") }}
+                    {{ form.message(class="form-control") }}
+                    {% if form.message.errors %}
+                        <div class="form-errors">
+                            {% for error in form.message.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">Describe what is missing, needs improvement, or not working well. Be as detailed as possible.</small>
+                </div>
+                
+                <div class="form-actions">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('profile') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="info-card">
+            <h3>📋 What to include:</h3>
+            <ul>
+                <li>Missing features or functionality</li>
+                <li>Issues or bugs you've encountered</li>
+                <li>Suggestions for improvements</li>
+                <li>Any questions about the platform</li>
+            </ul>
+            <p><strong>Note:</strong> Admin responses will appear in your profile under "Admin Feedback" section.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.help-request-page {
+    padding: 2rem 0;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+}
+
+.form-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.form-card {
+    background: white;
+    border: 1px solid #000000;
+    padding: 2rem;
+}
+
+.help-request-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #000000;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.form-help {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.form-errors {
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.info-card {
+    background: white;
+    border: 1px solid #000000;
+    padding: 1.5rem;
+    height: fit-content;
+}
+
+.info-card h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.info-card ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.info-card li {
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.info-card li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #28a745;
+}
+
+.info-card p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .help-request-page {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .page-header p {
+        font-size: 0.875rem;
+    }
+    
+    .form-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-card,
+    .info-card {
+        padding: 1rem;
+    }
+    
+    .form-control,
+    textarea.form-control {
+        width: 100%;
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 0.75rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        padding: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .form-card,
+    .info-card {
+        padding: 0.75rem;
+    }
+}
+</style>
+{% endblock %}
+

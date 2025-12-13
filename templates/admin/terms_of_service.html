@@ -1,0 +1,195 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Terms of Service - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>📜 Terms of Service</h1>
+        <p>{% if terms %}Edit and update{% else %}Create new{% endif %} the Terms of Service content</p>
+    </div>
+    
+    {% if terms %}
+    <div class="admin-info">
+        <div class="info-row">
+            <p><strong>Status:</strong> <span class="status-badge status-active">Active</span></p>
+            <p><strong>Last Updated:</strong> {{ terms.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            <p><strong>Updated By:</strong> {{ terms.updater.get_full_name() }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="admin-info">
+        <div class="info-row">
+            <p><strong>Status:</strong> <span class="status-badge status-inactive">No Terms Created</span></p>
+            <p>Create your first Terms of Service content below.</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="admin-table-container">
+        <div class="form-card">
+            <div class="form-header">
+                <h2>{% if terms %}✏️ Update Terms of Service{% else %}➕ Create Terms of Service{% endif %}</h2>
+            </div>
+            
+            <form method="POST" class="admin-form">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    {{ form.content.label(class="form-label") }}
+                    {{ form.content(class="form-control", placeholder="Enter Terms of Service content...") }}
+                    {% if form.content.errors %}
+                        <div class="form-errors">
+                            {% for error in form.content.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-help">You can use HTML formatting in the content. The content will be displayed on the public Terms of Service page.</small>
+                </div>
+                
+                <div class="form-actions">
+                    {% if terms %}
+                        {{ form.submit(class="btn btn-primary", value="Update Terms of Service") }}
+                        <button type="button" onclick="confirmDelete()" class="btn btn-danger">🗑️ Delete Terms</button>
+                    {% else %}
+                        {{ form.submit(class="btn btn-primary", value="Create Terms of Service") }}
+                    {% endif %}
+                    <a href="/terms-of-service" target="_blank" class="btn btn-secondary">👁️ View Public Page</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<form id="delete-form" method="POST" action="/admin/terms-of-service/delete" class="hidden-form">
+    {{ form.hidden_tag() }}
+</form>
+
+<script>
+function confirmDelete() {
+    if (confirm('Are you sure you want to delete the Terms of Service? This action cannot be undone.')) {
+        document.getElementById('delete-form').submit();
+    }
+}
+</script>
+
+<style>
+.admin-info {
+    background: var(--surface-color);
+    padding: 1rem;
+    border: 1px solid #000000;
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid #000000;
+}
+
+.status-active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.form-card {
+    background: var(--background-color);
+    border: 1px solid #000000;
+    padding: 2rem;
+}
+
+.form-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #000000;
+}
+
+.form-header h2 {
+    color: #1e40af;
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-control {
+    width: 100%;
+    min-height: 400px;
+    padding: 1rem;
+    border: 1px solid #000000;
+    font-family: monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.form-help {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.form-errors {
+    margin-top: 0.5rem;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-danger {
+    background-color: #dc2626;
+    color: white;
+    border: 1px solid #000000;
+    font-weight: 600;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+    color: white;
+}
+
+.hidden-form {
+    display: none;
+}
+</style>
+{% endblock %}
+

@@ -1,0 +1,96 @@
+/**
+ * Print Stylesheet
+ * Optimizes the website for printing
+ */
+
+@media print {
+    /* Hide non-essential elements */
+    .header,
+    .nav-menu,
+    .nav-toggle,
+    .footer,
+    .btn,
+    .action-buttons,
+    .flash-messages,
+    .skip-nav-link,
+    .dropdown-menu,
+    .admin-card-actions,
+    .pagination,
+    .search-container,
+    .material-actions,
+    .breadcrumb {
+        display: none !important;
+    }
+
+    /* Page setup */
+    @page {
+        margin: 1.5cm;
+    }
+
+    /* Typography */
+    body {
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+        color: #000;
+    }
+
+    /* Links */
+    a {
+        color: #000;
+        text-decoration: underline;
+    }
+
+    a[href^="http"]:after {
+        content: " (" attr(href) ")";
+        font-size: 90%;
+    }
+
+    /* Images */
+    img {
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+
+    /* Tables */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    table, th, td {
+        border: 1px solid #000;
+    }
+
+    th, td {
+        padding: 0.5em;
+    }
+
+    /* Page breaks */
+    .material-card,
+    .admin-card,
+    .news-card {
+        page-break-inside: avoid;
+        margin-bottom: 1em;
+    }
+
+    /* Show URLs */
+    .material-title a:after,
+    .news-title a:after {
+        content: " (" attr(href) ")";
+        font-size: 90%;
+    }
+
+    /* Hide decorative elements */
+    .icon,
+    .badge,
+    .status-badge {
+        display: none !important;
+    }
+}
+

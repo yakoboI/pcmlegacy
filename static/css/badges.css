@@ -1,0 +1,43 @@
+
+.admin-badge, .trial-badge, .subscription-badge, .expired-badge, .login-badge {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.admin-badge {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #000;
+}
+
+.trial-badge {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: #fff;
+}
+
+.subscription-badge {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: #fff;
+}
+
+.expired-badge {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: #fff;
+}
+
+.login-badge {
+    background: linear-gradient(135deg, #9E9E9E 0%, #757575 100%);
+    color: #fff;
+}
+
+.access-notice {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+

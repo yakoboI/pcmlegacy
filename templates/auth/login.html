@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card vodacom-style">
+        <div class="auth-header">
+            <div class="vodacom-logo">
+                <h1>PCMLEGACY</h1>
+                <div class="vodacom-line"></div>
+            </div>
+            <p class="auth-subtitle">Sign in to your account</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group vodacom-input-group">
+                {{ form.email.label(class="form-label vodacom-label") }}
+                {{ form.email(class="form-input vodacom-input", placeholder="Enter your email", autocomplete="email", required=True, **{"aria-required": "true"}) }}
+                {% if form.email.errors %}
+                    <div class="form-errors">
+                        {% for error in form.email.errors %}
+                            <span class="error vodacom-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group vodacom-input-group">
+                {{ form.password.label(class="form-label vodacom-label") }}
+                {{ form.password(class="form-input vodacom-input", placeholder="Enter your password", autocomplete="current-password", required=True, **{"aria-required": "true"}) }}
+                {% if form.password.errors %}
+                    <div class="form-errors">
+                        {% for error in form.password.errors %}
+                            <span class="error vodacom-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group checkbox-group vodacom-checkbox">
+                {{ form.remember_me(class="form-checkbox") }}
+                {{ form.remember_me.label(class="form-checkbox-label") }}
+            </div>
+            
+            <div class="form-group">
+                {{ form.submit(class="btn btn-vodacom btn-full") }}
+            </div>
+        </form>
+        
+        <div class="auth-footer">
+            <p class="auth-footer-text">Don't have an account? <a href="{{ url_for('register') }}" class="auth-link">Sign up here</a></p>
+            <p><a href="{{ url_for('forgot_password') }}" class="auth-link">Forgot your password?</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

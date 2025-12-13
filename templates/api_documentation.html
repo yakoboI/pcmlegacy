@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Pcmlegacy{% endblock %}
+
+{% block description %}API Documentation for Pcmlegacy - Learn how to integrate with our API endpoints.{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="api-documentation-page">
+        <h1>API Documentation</h1>
+        <p class="api-intro">
+            This document describes the API endpoints available in the Pcmlegacy platform. 
+            All API endpoints require authentication unless otherwise specified.
+        </p>
+        
+        <nav class="api-toc" aria-label="API Table of Contents">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#materials">Materials API</a></li>
+                <li><a href="#subscriptions">Subscriptions API</a></li>
+                <li><a href="#payments">Payments API</a></li>
+                <li><a href="#admin">Admin API</a></li>
+                <li><a href="#errors">Error Handling</a></li>
+            </ul>
+        </nav>
+
+        <div class="api-content">
+            <!-- Authentication Section -->
+            <section id="authentication" class="api-section">
+                <h2>Authentication</h2>
+                <p>
+                    Most API endpoints require user authentication. Authentication is handled via Flask-Login sessions.
+                    Users must be logged in to access protected endpoints.
+                </p>
+                
+                <div class="api-endpoint">
+                    <h3>Login</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/login</div>
+                    <p class="endpoint-description">Authenticate a user and create a session.</p>
+                    
+                    <h4>Request Body</h4>
+                    <pre><code>{
+  "email": "user@example.com",
+  "password": "userpassword"
+}</code></pre>
+                    
+                    <h4>Response</h4>
+                    <p>Redirects to dashboard on success, or returns login page with errors.</p>
+                </div>
+            </section>
+
+            <!-- Materials API Section -->
+            <section id="materials" class="api-section">
+                <h2>Materials API</h2>
+                <p>Endpoints for accessing educational materials.</p>
+                
+                <div class="api-endpoint">
+                    <h3>Get Material Details</h3>
+                    <div class="endpoint-method">GET</div>
+                    <div class="endpoint-url">/material/&lt;material_id&gt;</div>
+                    <p class="endpoint-description">Get details of a specific material. Requires authentication.</p>
+                    
+                    <h4>Parameters</h4>
+                    <ul>
+                        <li><code>material_id</code> (integer, required) - The ID of the material</li>
+                    </ul>
+                    
+                    <h4>Response</h4>
+                    <p>Returns HTML page with material details.</p>
+                </div>
+
+                <div class="api-endpoint">
+                    <h3>Download Material</h3>
+                    <div class="endpoint-method">GET</div>
+                    <div class="endpoint-url">/download/&lt;material_id&gt;</div>
+                    <p class="endpoint-description">Download a material file. Requires authentication and access rights.</p>
+                    
+                    <h4>Parameters</h4>
+                    <ul>
+                        <li><code>material_id</code> (integer, required) - The ID of the material</li>
+                    </ul>
+                    
+                    <h4>Response</h4>
+                    <p>Returns the material file for download.</p>
+                </div>
+
+                <div class="api-endpoint">
+                    <h3>Stream Video</h3>
+                    <div class="endpoint-method">GET</div>
+                    <div class="endpoint-url">/video/&lt;material_id&gt;</div>
+                    <p class="endpoint-description">Stream video content with HTTP Range support. Requires authentication.</p>
+                    
+                    <h4>Parameters</h4>
+                    <ul>
+                        <li><code>material_id</code> (integer, required) - The ID of the video material</li>
+                    </ul>
+                    
+                    <h4>Response</h4>
+                    <p>Returns video stream with Range request support (206 Partial Content).</p>
+                </div>
+            </section>
+
+            <!-- Subscriptions API Section -->
+            <section id="subscriptions" class="api-section">
+                <h2>Subscriptions API</h2>
+                <p>Endpoints for managing user subscriptions.</p>
+                
+                <div class="api-endpoint">
+                    <h3>Purchase Subscription via M-Pesa</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/api/subscriptions/&lt;plan_id&gt;/mpesa-click-to-pay</div>
+                    <p class="endpoint-description">Initiate M-Pesa payment for a subscription plan. Requires authentication.</p>
+                    
+                    <h4>Parameters</h4>
+                    <ul>
+                        <li><code>plan_id</code> (integer, required) - The ID of the subscription plan</li>
+                    </ul>
+                    
+                    <h4>Request Body</h4>
+                    <pre><code>{
+  "msisdn": "255712345678"
+}</code></pre>
+                    
+                    <h4>Response</h4>
+                    <pre><code>{
+  "success": true,
+  "message": "Payment initiated successfully",
+  "transaction_id": "12345",
+  "conversation_id": "abc123"
+}</code></pre>
+                    
+                    <h4>Error Responses</h4>
+                    <ul>
+                        <li><code>400</code> - Bad request (invalid plan, already subscribed, etc.)</li>
+                        <li><code>429</code> - Too many requests (rate limited)</li>
+                        <li><code>500</code> - Server error</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Payments API Section -->
+            <section id="payments" class="api-section">
+                <h2>Payments API</h2>
+                <p>Endpoints for payment processing.</p>
+                
+                <div class="api-endpoint">
+                    <h3>M-Pesa Click-to-Pay for Material</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/api/materials/&lt;material_id&gt;/mpesa-click-to-pay</div>
+                    <p class="endpoint-description">Initiate M-Pesa payment for a material. Requires authentication.</p>
+                    
+                    <h4>Parameters</h4>
+                    <ul>
+                        <li><code>material_id</code> (integer, required) - The ID of the material</li>
+                    </ul>
+                    
+                    <h4>Request Body</h4>
+                    <pre><code>{
+  "msisdn": "255712345678"
+}</code></pre>
+                    
+                    <h4>Response</h4>
+                    <pre><code>{
+  "success": true,
+  "message": "Payment initiated successfully",
+  "transaction_id": "12345",
+  "conversation_id": "abc123"
+}</code></pre>
+                </div>
+
+                <div class="api-endpoint">
+                    <h3>M-Pesa Callback</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/api/mpesa/callback</div>
+                    <p class="endpoint-description">Webhook endpoint for M-Pesa payment callbacks. Used internally by M-Pesa service.</p>
+                    
+                    <h4>Request Body</h4>
+                    <p>M-Pesa callback payload (format depends on M-Pesa API version).</p>
+                    
+                    <h4>Response</h4>
+                    <p>Returns success acknowledgment to M-Pesa.</p>
+                </div>
+            </section>
+
+            <!-- Admin API Section -->
+            <section id="admin" class="api-section">
+                <h2>Admin API</h2>
+                <p>Endpoints for administrative operations. Requires admin privileges.</p>
+                
+                <div class="api-endpoint">
+                    <h3>Get User Details</h3>
+                    <div class="endpoint-method">GET</div>
+                    <div class="endpoint-url">/admin/users/&lt;user_id&gt;/details</div>
+                    <p class="endpoint-description">Get detailed information about a user. Admin only.</p>
+                    
+                    <h4>Parameters</h4>
+                    <ul>
+                        <li><code>user_id</code> (integer, required) - The ID of the user</li>
+                    </ul>
+                    
+                    <h4>Response</h4>
+                    <pre><code>{
+  "success": true,
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "is_active": true,
+    "is_admin": false
+  }
+}</code></pre>
+                </div>
+
+                <div class="api-endpoint">
+                    <h3>Toggle User Status</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/admin/users/&lt;user_id&gt;/toggle-status</div>
+                    <p class="endpoint-description">Activate or deactivate a user. Admin only.</p>
+                    
+                    <h4>Request Body</h4>
+                    <pre><code>{
+  "is_active": true
+}</code></pre>
+                    
+                    <h4>Response</h4>
+                    <pre><code>{
+  "success": true,
+  "message": "User activated successfully"
+}</code></pre>
+                </div>
+
+                <div class="api-endpoint">
+                    <h3>Delete User</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/admin/users/&lt;user_id&gt;/delete</div>
+                    <p class="endpoint-description">Delete a user account. Admin only.</p>
+                    
+                    <h4>Response</h4>
+                    <pre><code>{
+  "success": true,
+  "message": "User deleted successfully"
+}</code></pre>
+                </div>
+
+                <div class="api-endpoint">
+                    <h3>Toggle News Status</h3>
+                    <div class="endpoint-method">POST</div>
+                    <div class="endpoint-url">/admin/news/&lt;news_id&gt;/toggle-status</div>
+                    <p class="endpoint-description">Publish or unpublish a news article. Admin only.</p>
+                    
+                    <h4>Request Body</h4>
+                    <pre><code>{
+  "is_published": true
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- Error Handling Section -->
+            <section id="errors" class="api-section">
+                <h2>Error Handling</h2>
+                <p>All API endpoints return appropriate HTTP status codes and error messages.</p>
+                
+                <div class="error-codes">
+                    <h3>HTTP Status Codes</h3>
+                    <ul>
+                        <li><code>200 OK</code> - Request successful</li>
+                        <li><code>201 Created</code> - Resource created successfully</li>
+                        <li><code>400 Bad Request</code> - Invalid request parameters</li>
+                        <li><code>401 Unauthorized</code> - Authentication required</li>
+                        <li><code>403 Forbidden</code> - Insufficient permissions</li>
+                        <li><code>404 Not Found</code> - Resource not found</li>
+                        <li><code>429 Too Many Requests</code> - Rate limit exceeded</li>
+                        <li><code>500 Internal Server Error</code> - Server error</li>
+                    </ul>
+                </div>
+
+                <div class="error-format">
+                    <h3>Error Response Format</h3>
+                    <pre><code>{
+  "success": false,
+  "message": "Error description",
+  "error_code": "ERROR_CODE"
+}</code></pre>
+                </div>
+
+                <div class="rate-limiting">
+                    <h3>Rate Limiting</h3>
+                    <p>
+                        API endpoints are rate-limited to prevent abuse. Default limit is 100 requests per hour per user/IP.
+                        When rate limit is exceeded, a <code>429 Too Many Requests</code> response is returned.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Usage Examples Section -->
+            <section id="examples" class="api-section">
+                <h2>Usage Examples</h2>
+                
+                <div class="example">
+                    <h3>JavaScript (Fetch API)</h3>
+                    <pre><code>// Purchase subscription
+fetch('/api/subscriptions/1/mpesa-click-to-pay', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  credentials: 'include', // Include session cookies
+  body: JSON.stringify({
+    msisdn: '255712345678'
+  })
+})
+.then(response => response.json())
+.then(data => {
+  if (data.success) {
+    console.log('Payment initiated:', data);
+  } else {
+    console.error('Error:', data.message);
+  }
+});</code></pre>
+                </div>
+
+                <div class="example">
+                    <h3>Python (Requests)</h3>
+                    <pre><code>import requests
+
+# Create session for authentication
+session = requests.Session()
+
+# Login first
+login_response = session.post('http://your-domain.com/login', data={
+    'email': 'user@example.com',
+    'password': 'password'
+})
+
+# Make API request
+response = session.post(
+    'http://your-domain.com/api/subscriptions/1/mpesa-click-to-pay',
+    json={'msisdn': '255712345678'}
+)
+
+data = response.json()
+print(data)</code></pre>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block styles %}
+<style>
+.api-documentation-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.api-documentation-page h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.api-intro {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.api-toc {
+    background: linear-gradient(135deg, var(--surface-color) 0%, var(--background-color) 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 4px 12px rgba(29, 53, 87, 0.08);
+}
+
+.api-toc h2 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+    color: var(--primary-color);
+}
+
+.api-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.api-toc li {
+    margin-bottom: 0.5rem;
+}
+
+.api-toc a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.api-toc a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.api-content {
+    line-height: 1.8;
+}
+
+.api-section {
+    margin-bottom: 4rem;
+    padding: 2rem;
+    background: var(--surface-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.api-section:hover {
+    box-shadow: 0 4px 12px rgba(29, 53, 87, 0.1);
+    border-color: var(--primary-color);
+}
+
+.api-section h2 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.api-section h3 {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.api-endpoint {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.endpoint-method {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+}
+
+.endpoint-url {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    background: var(--surface-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.endpoint-description {
+    margin: 1rem 0;
+    color: var(--text-secondary);
+}
+
+.api-endpoint h4 {
+    font-size: 1.125rem;
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.api-endpoint ul {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.api-endpoint li {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.api-endpoint code {
+    background: var(--background-color);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+}
+
+.api-endpoint pre {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.api-endpoint pre code {
+    background: none;
+    padding: 0;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.error-codes,
+.error-format,
+.rate-limiting {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.example {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.example h3 {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .api-documentation-page {
+        padding: 1rem 0.5rem;
+    }
+
+    .api-documentation-page h1 {
+        font-size: 2rem;
+    }
+
+    .api-section {
+        padding: 1.5rem;
+    }
+
+    .api-toc {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+

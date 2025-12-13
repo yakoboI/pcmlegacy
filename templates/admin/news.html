@@ -1,0 +1,256 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}News Management - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>📰 News Management</h1>
+        <p>Manage news articles and announcements</p>
+    </div>
+    
+    
+    <div class="quick-actions">
+        <div class="action-buttons">
+            <a href="{{ url_for('admin_add_news') }}" class="btn btn-primary">
+                <span class="btn-icon">➕</span>
+                Add New Article
+            </a>
+        </div>
+    </div>
+    
+    
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>📰 News Articles</h2>
+        </div>
+        <div class="card-content">
+            {% if news_articles.items %}
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Status</th>
+                            <th>Featured</th>
+                            <th>Views</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in news_articles.items %}
+                        <tr>
+                            <td>
+                                <div class="article-title">
+                                    <strong>{{ article.title }}</strong>
+                                    {% if article.excerpt %}
+                                    <br><small class="text-muted">{{ article.excerpt[:100] }}{% if article.excerpt|length > 100 %}...{% endif %}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ article.author.get_full_name() }}</td>
+                            <td>
+                                {% if article.is_published %}
+                                    <span class="badge badge-success">Published</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Draft</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if article.is_featured %}
+                                    <span class="badge badge-primary">⭐ Featured</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Regular</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ article.view_count }}</td>
+                            <td>{{ article.formatted_date }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button data-action="view-news" data-news-id="{{ article.id }}" class="btn btn-sm btn-secondary" title="View" aria-label="View news article">
+                                        👁️
+                                    </button>
+                                    <button data-action="edit-news" data-news-id="{{ article.id }}" class="btn btn-sm btn-primary" title="Edit" aria-label="Edit news article">
+                                        ✏️
+                                    </button>
+                                    <button data-action="toggle-news-status" data-news-id="{{ article.id }}" data-current-status="{{ article.is_published|lower }}" class="btn btn-sm btn-warning" title="Toggle Status" aria-label="Toggle news status">
+                                        {% if article.is_published %}⏸️{% else %}▶️{% endif %}
+                                    </button>
+                                    <button data-action="delete-news" data-news-id="{{ article.id }}" class="btn btn-sm btn-danger" title="Delete" aria-label="Delete news article">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            
+            {% if news_articles.pages > 1 %}
+            <div class="pagination">
+                {% if news_articles.has_prev %}
+                    <a href="{{ url_for('admin_news', page=news_articles.prev_num) }}" class="btn btn-secondary">← Previous</a>
+                {% endif %}
+                
+                <span class="pagination-info">
+                    Page {{ news_articles.page }} of {{ news_articles.pages }}
+                </span>
+                
+                {% if news_articles.has_next %}
+                    <a href="{{ url_for('admin_news', page=news_articles.next_num) }}" class="btn btn-secondary">Next →</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📰</div>
+                <h3>No News Articles</h3>
+                <p>You haven't created any news articles yet.</p>
+                <a href="{{ url_for('admin_add_news') }}" class="btn btn-primary">
+                    <span class="btn-icon">➕</span>
+                    Create First Article
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function viewNews(newsId) {
+    window.open(`/news/${newsId}`, '_blank');
+}
+
+function editNews(newsId) {
+    window.location.href = `/admin/news/edit/${newsId}`;
+}
+
+function toggleNewsStatus(newsId, currentStatus) {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'publish' : 'unpublish';
+    
+    if (confirm(`Are you sure you want to ${action} this news article?`)) {
+        fetch(`/admin/news/${newsId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the news article.');
+        });
+    }
+}
+
+function deleteNews(newsId) {
+    if (confirm('Are you sure you want to delete this news article? This action cannot be undone.')) {
+        fetch(`/admin/news/${newsId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the news article.');
+        });
+    }
+}
+</script>
+
+<style>
+.article-title {
+    max-width: 300px;
+}
+
+.text-muted {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border: 1px solid #000000;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #000000;
+}
+
+.badge-primary {
+    background: #007bff;
+    color: white;
+}
+
+.badge-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dc3545;
+}
+
+.pagination-info {
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    margin: 1rem 0;
+    color: var(--text-primary);
+}
+
+.empty-state p {
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}

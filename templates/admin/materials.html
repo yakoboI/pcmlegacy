@@ -1,0 +1,165 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Manage Materials - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>Manage Materials</h1>
+        <a href="{{ url_for('admin_add_material') }}" class="btn btn-primary">
+            <span class="btn-icon">➕</span>
+            Add New Material
+        </a>
+    </div>
+    
+    
+    <div class="admin-table-container desktop-only">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials.items %}
+                <tr>
+                    <td>{{ material.id }}</td>
+                    <td>
+                        <div class="material-title-cell">
+                            <strong>{{ material.title }}</strong>
+                            <small>{{ material.description[:50] }}{% if material.description|length > 50 %}...{% endif %}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="category-badge">{{ material.category.name }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ 'active' if material.is_active else 'inactive' }}">
+                            {{ 'Active' if material.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td>{{ material.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('admin_edit_material', material_id=material.id) }}" 
+                               class="btn btn-sm btn-secondary" title="Edit">
+                                ✏️
+                            </a>
+                            <form method="POST" action="{{ url_for('admin_delete_material', material_id=material.id) }}" 
+                                  class="inline-form" data-confirm="Are you sure you want to delete this material?">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Delete" aria-label="Delete material">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="no-data">No materials found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    
+    <div class="admin-card-list mobile-only">
+        {% for material in materials.items %}
+        <div class="admin-card material-card">
+            <div class="admin-card-header">
+                <div>
+                    <div class="admin-card-title">#{{ material.id }} · {{ material.title }}</div>
+                    <div class="admin-card-subtitle">{{ material.category.name }}</div>
+                </div>
+                <div class="admin-card-status">
+                    <span class="status-badge status-{{ 'active' if material.is_active else 'inactive' }}">
+                        {{ 'Active' if material.is_active else 'Inactive' }}
+                    </span>
+                </div>
+            </div>
+            <div class="admin-card-body">
+                {% if material.description %}
+                <div class="admin-card-note">
+                    {{ material.description[:120] }}{% if material.description|length > 120 %}...{% endif %}
+                </div>
+                {% endif %}
+                <div class="admin-card-meta">
+                    <div class="meta-block">
+                        <span class="meta-label">Category</span>
+                        <span class="meta-value">{{ material.category.name }}</span>
+                    </div>
+                    <div class="meta-block">
+                        <span class="meta-label">Created</span>
+                        <span class="meta-value">{{ material.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-card-actions">
+                <a href="{{ url_for('admin_edit_material', material_id=material.id) }}" 
+                   class="btn btn-secondary btn-sm" title="Edit">
+                    ✏️ Edit
+                </a>
+                <form method="POST" action="{{ url_for('admin_delete_material', material_id=material.id) }}" 
+                      class="inline-form" data-confirm="Are you sure you want to delete this material?">
+                    <button type="submit" class="btn btn-danger btn-sm" title="Delete" aria-label="Delete material">
+                        🗑️ Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="admin-card">
+            <p class="admin-card-note">No materials found.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    
+    {% if materials.pages > 1 %}
+    <div class="pagination">
+        {% if materials.has_prev %}
+            <a href="{{ url_for('admin_materials', page=materials.prev_num) }}" class="btn btn-secondary">Previous</a>
+        {% endif %}
+        
+        <span class="pagination-info">
+            Page {{ materials.page }} of {{ materials.pages }}
+        </span>
+        
+        {% if materials.has_next %}
+            <a href="{{ url_for('admin_materials', page=materials.next_num) }}" class="btn btn-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add confirmation for delete actions
+document.querySelectorAll('.inline-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to delete this material? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+});
+
+// Add loading states for buttons
+document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (this.type !== 'submit') {
+            this.classList.add('loading');
+            setTimeout(() => {
+                this.classList.remove('loading');
+            }, 1000);
+        }
+    });
+});
+</script>
+{% endblock %}

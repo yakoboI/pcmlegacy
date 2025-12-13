@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Pcmlegacy{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-header">
+        <h1>Edit Profile</h1>
+        <p>Update your personal information</p>
+    </div>
+    
+    <div class="profile-form-container">
+        <form method="POST" class="profile-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-section">
+                <h3>Personal Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.first_name.label(class="form-label") }}
+                        {{ form.first_name(class="form-input", placeholder="First name") }}
+                        {% if form.first_name.errors %}
+                            <div class="form-errors">
+                                {% for error in form.first_name.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.last_name.label(class="form-label") }}
+                        {{ form.last_name(class="form-input", placeholder="Last name") }}
+                        {% if form.last_name.errors %}
+                            <div class="form-errors">
+                                {% for error in form.last_name.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.phone.label(class="form-label") }}
+                    {{ form.phone(class="form-input", placeholder="Phone number (optional)") }}
+                    {% if form.phone.errors %}
+                        <div class="form-errors">
+                            {% for error in form.phone.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('profile') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.profile-page {
+    padding: 2rem 0;
+}
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-header h1 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.profile-header p {
+    color: var(--text-secondary);
+}
+
+.profile-form-container {
+    background: var(--background-color);
+    border: 1px solid #000000;
+    padding: 2rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-section {
+    border-bottom: 1px solid #000000;
+    padding-bottom: 2rem;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.form-section h3 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.125rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.form-input {
+    padding: 0.5rem;
+    border: 1px solid #000000;
+    font-size: 0.875rem;
+    background: white;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #000000;
+    background: white;
+}
+
+.form-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.error {
+    color: var(--danger-color);
+    font-size: 0.75rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #000000;
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 1rem;
+    }
+    
+    .profile-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .profile-form-container {
+        padding: 0;
+    }
+    
+    .profile-form {
+        padding: 1rem;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .form-input,
+    textarea.form-input,
+    select.form-input {
+        width: 100%;
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 0.75rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        padding: 0.875rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .profile-form {
+        padding: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,297 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>{{ title }}</h1>
+        <a href="{{ url_for('admin_subscription_plans') }}" class="btn btn-secondary">
+            ← Back to Plans
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" class="admin-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-section">
+                <h3>Plan Details</h3>
+                
+                <div class="form-group">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control", placeholder="Enter plan name") }}
+                    {% if form.name.errors %}
+                        <div class="form-errors">
+                            {% for error in form.name.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows="4", placeholder="Enter plan description") }}
+                    {% if form.description.errors %}
+                        <div class="form-errors">
+                            {% for error in form.description.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.price.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text">TZS</span>
+                            {{ form.price(class="form-control", placeholder="0.00") }}
+                        </div>
+                        {% if form.price.errors %}
+                            <div class="form-errors">
+                                {% for error in form.price.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.duration_days.label(class="form-label") }}
+                        {{ form.duration_days(class="form-control", placeholder="30") }}
+                        {% if form.duration_days.errors %}
+                            <div class="form-errors">
+                                {% for error in form.duration_days.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.max_materials.label(class="form-label") }}
+                    {{ form.max_materials(class="form-control", placeholder="100") }}
+                    {% if form.max_materials.errors %}
+                        <div class="form-errors">
+                            {% for error in form.max_materials.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.features.label(class="form-label") }}
+                    {{ form.features(class="form-control", rows="4", placeholder="Enter features, one per line") }}
+                    <small class="form-text">Enter each feature on a new line</small>
+                    {% if form.features.errors %}
+                        <div class="form-errors">
+                            {% for error in form.features.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Settings</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.sort_order.label(class="form-label") }}
+                        {{ form.sort_order(class="form-control", placeholder="0") }}
+                        <small class="form-text">Lower numbers appear first</small>
+                        {% if form.sort_order.errors %}
+                            <div class="form-errors">
+                                {% for error in form.sort_order.errors %}
+                                    <span class="error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        {{ form.is_active(class="form-checkbox") }}
+                        {{ form.is_active.label(class="form-checkbox-label") }}
+                    </div>
+                    
+                    <div class="checkbox-item">
+                        {{ form.is_popular(class="form-checkbox") }}
+                        {{ form.is_popular.label(class="form-checkbox-label") }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('admin_subscription_plans') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.admin-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section h3 {
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    color: #374151;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-group {
+    display: flex;
+}
+
+.input-group-text {
+    background: #f9fafb;
+    border: 1px solid #d1d5db;
+    border-right: none;
+    padding: 0.75rem;
+    border-radius: 0;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.input-group .form-control {
+    border-radius: 0;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: #3b82f6;
+}
+
+.form-checkbox-label {
+    color: #374151;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.form-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.form-errors {
+    margin-top: 0.5rem;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+</style>
+{% endblock %}

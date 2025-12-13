@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results for "{{ query }}" - Pcmlegacy{% endblock %}
+
+{% block description %}Search results for "{{ query }}" in our e-materials collection.{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb mb-4">
+    <a href="{{ url_for('index') }}" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">Search Results</span>
+</nav>
+
+<div class="search-header mb-4">
+    <h1>Search Results</h1>
+    <p class="text-secondary">Found {{ materials.total }} result(s) for "{{ query }}"</p>
+    
+    
+    <div class="search-container">
+        <form class="search-form" action="{{ url_for('search') }}" method="GET">
+            <input 
+                type="search" 
+                name="q" 
+                class="search-input" 
+                placeholder="Search e-materials..." 
+                value="{{ query }}"
+                aria-label="Search e-materials"
+            >
+            <button type="submit" class="search-btn">Search</button>
+        </form>
+    </div>
+</div>
+
+{% if materials.items %}
+<section class="search-results">
+    <div class="materials-grid">
+        {% for material in materials.items %}
+        <div class="material-card{% if material.is_video %} video-material{% endif %}" data-material-url="{{ url_for('material_detail', material_id=material.id) }}" role="button" tabindex="0" aria-label="View {{ material.title }} details">
+            <div class="material-image">
+                {% if material.image_path %}
+                    {% set webp_path = material.image_path|webp_image %}
+                    <picture>
+                        {% if webp_path != material.image_path %}
+                        <source srcset="{{ url_for('static', filename=webp_path) }}" type="image/webp">
+                        {% endif %}
+                        <img src="{{ url_for('static', filename=material.image_path) }}" 
+                             alt="{{ material.title }}" 
+                             class="material-img"
+                             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
+                {% else %}
+                    <div class="material-placeholder">
+                        {% if material.is_video %}<span class="icon icon-video icon-3xl"></span>{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="material-content">
+                <h3 class="material-title">{{ material.title }}</h3>
+                <p class="material-description">{{ material.description[:100] }}{% if material.description|length > 100 %}...{% endif %}</p>
+                
+                <div class="material-meta">
+                    <span class="material-subscription">📚 SUBSCRIPTION</span>
+                    <span class="material-category">{{ material.category.name }}</span>
+                    <span class="material-date">📅 {{ material.created_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                
+                <div class="material-actions">
+                    <a 
+                        href="{{ url_for('material_detail', material_id=material.id) }}" 
+                        class="btn btn-primary"
+                        data-stop-propagation="true"
+                    >
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    
+    {% if materials.pages > 1 %}
+    <div class="pagination">
+        {% if materials.has_prev %}
+            <a href="{{ url_for('search', q=query, category=selected_category, page=materials.prev_num) }}" class="btn btn-secondary">Previous</a>
+        {% endif %}
+        
+        <span class="pagination-info">
+            Page {{ materials.page }} of {{ materials.pages }}
+        </span>
+        
+        {% if materials.has_next %}
+            <a href="{{ url_for('search', q=query, category=selected_category, page=materials.next_num) }}" class="btn btn-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% else %}
+<div class="no-results">
+    <div class="no-results-icon">🔍</div>
+    <h2>No results found</h2>
+    <p>Try searching with different keywords or browse our categories.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Browse All Materials</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function handleImageError(img) {
+    img.style.display = 'none';
+    const placeholder = img.nextElementSibling;
+    if (placeholder) {
+        placeholder.style.display = 'flex';
+    }
+}
+</script>
+{% endblock %}

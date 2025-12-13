@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}{{ material.title }} - Pcmlegacy{% endblock %}
+
+{% block description %}{{ material.description }}{% endblock %}
+
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ material.title }} - Pcmlegacy{% endblock %}
+{% block og_description %}{{ material.description }}{% endblock %}
+{% block twitter_title %}{{ material.title }} - Pcmlegacy{% endblock %}
+{% block twitter_description %}{{ material.description }}{% endblock %}
+{% block og_image %}{% if material.image_path %}{{ request.url_root.rstrip('/') }}{{ url_for('static', filename=material.image_path) }}{% else %}{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='images/favicon.svg') }}{% endif %}{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "{% if material.is_video %}VideoObject{% else %}CreativeWork{% endif %}",
+    "name": "{{ material.title|e }}",
+    "description": "{{ material.description|e }}",
+    "image": "{% if material.image_path %}{{ request.url_root.rstrip('/') }}{{ url_for('static', filename=material.image_path) }}{% else %}{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='images/favicon.svg') }}{% endif %}",
+    "datePublished": "{{ material.created_at.strftime('%Y-%m-%dT%H:%M:%S+00:00') }}",
+    "dateModified": "{{ (material.updated_at or material.created_at).strftime('%Y-%m-%dT%H:%M:%S+00:00') }}",
+    "author": {
+        "@type": "Organization",
+        "name": "Pcmlegacy"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "Pcmlegacy",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='images/favicon.svg') }}"
+        }
+    },
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.url }}"
+    },
+    "inLanguage": "en",
+    "learningResourceType": "{{ material.category.name if material.category else 'Educational Material' }}",
+    "educationalLevel": "{% if 'O-Level' in material.title or 'O Level' in material.title %}High School{% elif 'A-Level' in material.title or 'A Level' in material.title %}High School{% else %}University{% endif %}"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb mb-4">
+    <a href="{{ url_for('index') }}" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">{{ material.title }}</span>
+</nav>
+
+<div class="material-detail">
+    <div class="material-detail-grid">
+        
+        <div class="material-detail-image">
+            <div class="material-image-large">
+                {% if material.image_path %}
+                    {% set webp_path = material.image_path|webp_image %}
+                    <picture>
+                        {% if webp_path != material.image_path %}
+                        <source srcset="{{ url_for('static', filename=webp_path) }}" type="image/webp">
+                        {% endif %}
+                        <img src="{{ url_for('static', filename=material.image_path) }}" 
+                             alt="{{ material.title }}" 
+                             class="material-detail-img"
+                             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
+                {% else %}
+                    <div class="material-detail-placeholder">
+                        {% if material.is_video %}🎥{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        
+        <div class="material-detail-info">
+            <h1 class="material-detail-title">{{ material.title }}</h1>
+            <p class="material-detail-description">{{ material.description }}</p>
+            
+            
+            <div class="material-specs">
+                {% if material.is_video %}
+                <table class="material-details-table">
+                    <tbody>
+                        <tr>
+                            <td class="spec-label">Category:</td>
+                            <td class="spec-value">{{ material.category.name }}</td>
+                        </tr>
+                        {% if material.video_duration %}
+                        <tr>
+                            <td class="spec-label">Duration:</td>
+                            <td class="spec-value">{{ material.video_duration }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if material.video_quality %}
+                        <tr>
+                            <td class="spec-label">Quality:</td>
+                            <td class="spec-value">{{ material.video_quality }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="spec-label">File Size:</td>
+                            <td class="spec-value">{{ material.file_size }}</td>
+                        </tr>
+                        <tr>
+                            <td class="spec-label">Format:</td>
+                            <td class="spec-value">{{ material.file_format.upper() }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <table class="material-details-table">
+                    <tbody>
+                        <tr>
+                            <td class="spec-label">Category:</td>
+                            <td class="spec-value">{{ material.category.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="spec-label">Uploaded:</td>
+                            <td class="spec-value">{{ material.created_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="spec-label">Format:</td>
+                            <td class="spec-value">{{ material.file_format }}</td>
+                        </tr>
+                        <tr>
+                            <td class="spec-label">Pages:</td>
+                            <td class="spec-value">{{ material.pages }}</td>
+                        </tr>
+                        <tr>
+                            <td class="spec-label">File Size:</td>
+                            <td class="spec-value">{{ material.file_size }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+            
+            
+            <div class="material-purchase">
+                {% if current_user.is_authenticated %}
+                    {% set access_status = current_user.get_access_status() %}
+                    {% if access_status == "admin" %}
+                        <div class="material-price-large admin-badge">👑 ADMIN ACCESS</div>
+                        <div class="access-notice">Full access to all materials</div>
+                    {% elif access_status.startswith("subscription_") %}
+                        {% set days_left = access_status.split("_")[1] %}
+                        <div class="material-price-large subscription-badge">⭐ SUBSCRIPTION ACTIVE</div>
+                        <div class="access-notice">{{ days_left }} days remaining in your subscription</div>
+                    {% elif access_status == "limited" %}
+                        {% if can_view_free %}
+                            <div class="material-price-large trial-badge">🆓 FIRST VIEW FREE</div>
+                            <div class="access-notice">One-time free view. After this, payment required.</div>
+                        {% else %}
+                            <div class="material-price-large limited-badge">🔒 PAYMENT REQUIRED</div>
+                            <div class="access-notice">You have already viewed this material. Pay to access again.</div>
+                        {% endif %}
+                    {% else %}
+                        {# This should not happen, but handle it anyway #}
+                        {% if can_view_free %}
+                            <div class="material-price-large trial-badge">🆓 FIRST VIEW FREE</div>
+                            <div class="access-notice">One-time free view. After this, payment required.</div>
+                        {% else %}
+                            <div class="material-price-large limited-badge">🔒 PAYMENT REQUIRED</div>
+                            <div class="access-notice">Pay to unlock this material</div>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <div class="material-price-large login-badge">🔐 LOGIN REQUIRED</div>
+                    <div class="access-notice">Register to get free first view of each material</div>
+                {% endif %}
+                
+                <div class="material-actions-large">
+                    {% if current_user.is_authenticated %}
+                        {% if has_access == True %}
+                            {# User has active subscription - show full access buttons #}
+                            {% if material.is_video %}
+                                <a 
+                                    href="{{ url_for('stream_video', material_id=material.id) }}" 
+                                    class="btn btn-success btn-large"
+                                >
+                                    🎥 Watch Video
+                                </a>
+                            {% else %}
+                                <a 
+                                    href="/read/{{ material.id }}" 
+                                    class="btn btn-primary btn-large"
+                                >
+                                    📖 Read Online
+                                </a>
+                                <a 
+                                    href="{{ url_for('download_material', material_id=material.id) }}" 
+                                    class="btn btn-success btn-large"
+                                >
+                                    📥 Download
+                                </a>
+                            {% endif %}
+                        {% elif can_view_free == True and has_access == False %}
+                            {# First view is free AND user has NO subscription - show first view buttons #}
+                            {% if material.is_video %}
+                                <a 
+                                    href="{{ url_for('stream_video', material_id=material.id) }}" 
+                                    class="btn btn-success btn-large"
+                                >
+                                    🎥 Watch Video (First View Free)
+                                </a>
+                            {% else %}
+                                <a 
+                                    href="/read/{{ material.id }}" 
+                                    class="btn btn-primary btn-large"
+                                >
+                                    📖 Read Online (First View Free)
+                                </a>
+                                <a 
+                                    href="{{ url_for('download_material', material_id=material.id) }}" 
+                                    class="btn btn-success btn-large"
+                                >
+                                    📥 Download (First View Free)
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            {# Payment required - NO BUTTONS AT ALL #}
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-large">
+                            🔐 Login to Access
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn btn-success btn-large">
+                            📝 Register for First View Free
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.is_authenticated and not has_access and not can_view_free %}
+    <div class="subscription-redirect-card">
+        <div class="subscription-card-header">
+            <div class="subscription-icon">⭐</div>
+            <div class="subscription-content">
+                <h3 class="subscription-title">
+                    {% if view_count > 0 %}
+                        Free View Used - Subscribe for Unlimited Access
+                    {% else %}
+                        Subscribe to Access This Material
+                    {% endif %}
+                </h3>
+                <p class="subscription-description">
+                    {% if view_count > 0 %}
+                        You've already viewed this material {{ view_count }} time{{ 's' if view_count > 1 else '' }}. 
+                        Get a subscription plan to access all materials unlimited times.
+                    {% else %}
+                        Get unlimited access to all materials with our flexible subscription plans. 
+                        Choose a plan that works for you.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="subscription-actions">
+            <a href="{{ url_for('subscriptions', material_id=material.id) }}" class="btn btn-primary btn-large subscription-btn">
+                View Subscription Plans
+            </a>
+            <p class="subscription-hint">
+                After subscribing, you'll have unlimited access to all materials including this one.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.limited-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.subscription-prompt {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.subscription-prompt p {
+    margin: 0 0 0.75rem 0;
+    font-weight: 600;
+}
+
+.subscription-prompt .btn {
+    background: white;
+    color: #3b82f6;
+    border: none;
+    font-weight: 600;
+}
+
+.subscription-prompt .btn:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+/* Clean Table Format for Material Details */
+.material-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000000;
+    background: white;
+}
+
+.material-details-table tbody {
+    display: table-row-group;
+}
+
+.material-details-table tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.material-details-table tr:last-child {
+    border-bottom: none;
+}
+
+.material-details-table td {
+    padding: 0.5rem 0.75rem;
+    vertical-align: top;
+}
+
+.material-details-table .spec-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    width: 30%;
+    background: #f8f9fa;
+    border-right: 1px solid #e0e0e0;
+}
+
+.material-details-table .spec-value {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    width: 70%;
+}
+
+.material-detail-placeholder.is-hidden {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .subscription-redirect-card {
+        padding: 1.5rem;
+    }
+    
+    .subscription-card-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .subscription-icon {
+        font-size: 2.5rem;
+    }
+    
+    .subscription-title {
+        font-size: 1.25rem;
+    }
+    
+    .subscription-description {
+        font-size: 0.9375rem;
+    }
+    
+    .subscription-btn {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .material-detail {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    .material-detail-grid {
+        gap: 1rem !important;
+        margin: 1rem 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    .material-detail-image,
+    .material-detail-info {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    .material-image-large {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+    
+    .material-detail-img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    
+    .material-detail-title {
+        font-size: 1.25rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .material-detail-description {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .material-specs {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.75rem !important;
+        margin: 0 !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    .material-details-table {
+        font-size: 0.8125rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        box-sizing: border-box !important;
+    }
+    
+    .material-details-table td {
+        padding: 0.5rem !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 0 !important;
+    }
+    
+    .material-details-table .spec-label {
+        width: 35% !important;
+        max-width: 35% !important;
+        font-size: 0.75rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        overflow: hidden !important;
+    }
+    
+    .material-details-table .spec-value {
+        width: 65% !important;
+        max-width: 65% !important;
+        font-size: 0.75rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        overflow: hidden !important;
+    }
+    
+    .material-details-table td * {
+        max-width: 100% !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    
+    .material-purchase *,
+    .material-specs *,
+    .material-price-large *,
+    .access-notice * {
+        max-width: 100% !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    
+    .material-actions-large .btn * {
+        max-width: 100% !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    
+    .material-purchase {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.75rem !important;
+        margin: 0 !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    .material-price-large,
+    .admin-badge,
+    .trial-badge,
+    .subscription-badge,
+    .expired-badge,
+    .login-badge,
+    .limited-badge {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 1rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+    }
+    
+    .access-notice {
+        width: 100% !important;
+        max-width: 100% !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        font-size: 0.875rem !important;
+        padding: 0.5rem 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    .material-actions-large {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    .material-actions-large .btn {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .breadcrumb {
+        font-size: 0.8125rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+
+/* Mobile-first: Base styles already defined above */
+/* Tablet+ enhancements handled in main CSS file */
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
