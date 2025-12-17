@@ -11,12 +11,6 @@ import os
 # Set production environment
 os.environ['FLASK_ENV'] = 'production'
 
-# Set SECRET_KEY if not already set in environment variables
-# IMPORTANT: For better security, set SECRET_KEY in PythonAnywhere Web tab → Environment variables
-# This is a fallback - replace with your own secure key!
-if 'SECRET_KEY' not in os.environ:
-    os.environ['SECRET_KEY'] = 'beb20e17017e99a9a3a02eacf750bcf0c70ab68e2eb5291a1599a373e8b25546'
-
 # Set the path to your PythonAnywhere project directory
 # This should match your "Source code" and "Working directory" settings
 path = '/home/chusi/pcmlegacy'
@@ -106,4 +100,3 @@ if app_import_successful:
         traceback.print_exc()
 else:
     print("⚠ Skipping database initialization - app module not imported successfully")
-
