@@ -90,17 +90,31 @@ if os.path.exists(venv_path):
 
 # Add portal-sdk directory to Python path (required for portalsdk module)
 portal_sdk_path = os.path.join(path, 'portal-sdk')
+portal_sdk_available = False
+
+# Try primary path first
 if os.path.exists(portal_sdk_path) and portal_sdk_path not in sys.path:
     sys.path.insert(0, portal_sdk_path)
     print(f"✓ Added portal-sdk directory to Python path: {portal_sdk_path}")
+    portal_sdk_available = True
+elif portal_sdk_path in sys.path:
+    portal_sdk_available = True  # Already in path
 else:
     # Try alternative path
     alt_portal_sdk_path = os.path.join('/home/chusi/pcm', 'portal-sdk')
     if os.path.exists(alt_portal_sdk_path) and alt_portal_sdk_path not in sys.path:
         sys.path.insert(0, alt_portal_sdk_path)
         print(f"✓ Added portal-sdk directory from alternative path: {alt_portal_sdk_path}")
-    elif not os.path.exists(portal_sdk_path):
+        portal_sdk_available = True
+    elif alt_portal_sdk_path in sys.path:
+        portal_sdk_available = True  # Already in path
+
+# Only warn if portalsdk is not available via any path
+if not portal_sdk_available:
+    alt_portal_sdk_path = os.path.join('/home/chusi/pcm', 'portal-sdk')
+    if not os.path.exists(portal_sdk_path) and not os.path.exists(alt_portal_sdk_path):
         print(f"⚠ Warning: portal-sdk directory not found at: {portal_sdk_path}")
+        print(f"  Also checked alternative path: {alt_portal_sdk_path}")
         print(f"  The portalsdk module may not be importable. Check that portal-sdk directory exists.")
 
 # Check if SECRET_KEY is set before importing app
