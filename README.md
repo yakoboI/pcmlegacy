@@ -65,8 +65,14 @@ source venv/bin/activate
 
 ### 3. Install Dependencies
 
+**Install Dependencies:**
 ```bash
 pip install -r requirements.txt
+```
+
+**For PythonAnywhere:**
+```bash
+pip3.10 install --user -r requirements.txt
 ```
 
 ### 4. Configure Environment Variables
@@ -141,7 +147,8 @@ pcm/
 ├── models.py              # Database models
 ├── forms.py               # WTForms form definitions
 ├── wsgi.py                # WSGI configuration for deployment
-├── requirements.txt       # Python dependencies
+├── wsgi_production.py     # Production WSGI for PythonAnywhere
+├── requirements.txt       # Python dependencies (dev & production)
 ├── instance/              # Database files (SQLite)
 ├── static/                # Static files (CSS, JS, images)
 │   ├── css/
@@ -150,7 +157,7 @@ pcm/
 ├── templates/             # Jinja2 templates
 │   ├── admin/             # Admin panel templates
 │   ├── auth/              # Authentication templates
-│   ├── errors/            # Error pages
+│   ├── errors/           # Error pages
 │   └── user/              # User dashboard templates
 ├── services/              # Service modules
 │   └── mpesa_client.py    # M-Pesa integration
@@ -177,22 +184,80 @@ SECRET_KEY=your-strong-secret-key-here
 
 **Production Requirements:**
 - Set a strong `SECRET_KEY`
-- Configure proper database (PostgreSQL recommended)
+- Configure proper database (PostgreSQL recommended for production)
 - Enable HTTPS (`SESSION_COOKIE_SECURE=True`)
 - Configure proper `SERVER_NAME`
 - Set up proper M-Pesa production credentials
 
 ## Deployment
 
-### PythonAnywhere
+### PythonAnywhere Deployment
 
-1. Upload your code to PythonAnywhere
-2. Update `wsgi.py` with your actual path:
-   ```python
-   path = '/home/yourusername/pcmlegacy'  # Update this
+#### Quick Deployment Checklist
+
+**Before Deployment:**
+1. ✅ Backup database (Admin Panel → Database → Create Backup)
+2. ✅ Test locally
+3. ✅ Note changes made
+
+**During Deployment:**
+1. ✅ Upload changed files to PythonAnywhere
+2. ✅ **DO NOT** delete `instance/pcm_store.db`
+3. ✅ Reload web app (PythonAnywhere → Web → Reload)
+
+**After Deployment:**
+1. ✅ Verify database (check size hasn't decreased)
+2. ✅ Test key features
+3. ✅ Check error logs
+
+#### Step-by-Step PythonAnywhere Setup
+
+1. **Upload Files**
+   - Upload your project to `/home/chusi/pcmlegacy/` (or your directory)
+   - Use File Manager or Git
+
+2. **Check Python Version**
+   - Go to Web tab → Your web app
+   - Note the Python version (e.g., 3.10)
+
+3. **Install Dependencies**
+   ```bash
+   cd /home/chusi/pcmlegacy
+   pip3.10 install --user -r requirements.txt
    ```
-3. Configure environment variables in the web app settings
-4. Point your web app to `wsgi.py`
+
+4. **Configure WSGI File**
+   - Copy content from `wsgi_production.py`
+   - Paste into PythonAnywhere WSGI file (`/var/www/chusi_pythonanywhere_com_wsgi.py`)
+   - Update path if needed
+
+5. **Configure Static Files**
+   - URL: `/static/`
+   - Directory: `/home/chusi/pcmlegacy/static/`
+
+6. **Set Environment Variables**
+   - `FLASK_ENV=production`
+   - `SECRET_KEY=your-strong-secret-key`
+   - Add email and M-Pesa credentials
+
+7. **Reload Web App**
+   - Click green "Reload" button
+   - Check error log for issues
+
+#### Safe Deployment Practices
+
+**🛡️ Data Protection:**
+- ✅ Never drops tables - Only adds missing tables
+- ✅ Never drops columns - Only adds missing columns
+- ✅ Never deletes data - All existing data preserved
+- ✅ Automatic backups before migrations
+- ✅ Safe migrations without data loss
+
+**Emergency Rollback:**
+1. Stop web app (PythonAnywhere → Web → Stop)
+2. Restore backup (Admin Panel → Database → Restore)
+3. Revert code changes
+4. Restart web app
 
 ### Other Platforms
 
@@ -201,6 +266,102 @@ The application is compatible with:
 - DigitalOcean App Platform
 - AWS Elastic Beanstalk
 - Any WSGI-compatible hosting service
+
+## Database Management
+
+### Database Configuration
+
+The system supports multiple database types via `DATABASE_URL` environment variable:
+
+**SQLite (Default):**
+```env
+DATABASE_URL=sqlite:///pcm_store.db
+```
+
+**PostgreSQL:**
+```env
+DATABASE_URL=postgresql://username:password@hostname:port/database_name
+```
+
+**MySQL:**
+```env
+DATABASE_URL=mysql+pymysql://username:password@hostname:port/database_name
+```
+
+### Database Backup & Restore
+
+**Access:** Admin Panel → 💾 Database
+
+**Features:**
+- Create manual backups
+- Restore from backups
+- View database statistics
+- Download backup files
+- Manage backup storage
+
+**Note:** Backup/restore currently works with SQLite only. For PostgreSQL/MySQL, use database-specific tools.
+
+### Database Migration
+
+The system includes automatic safe migrations:
+- ✅ Only adds missing tables/columns
+- ✅ Never drops existing data
+- ✅ Preserves all existing data
+- ✅ Automatic backups before migrations
+
+**Migration Process:**
+1. Checks existing database structure
+2. Compares with models
+3. Adds missing items only
+4. Sets safe defaults for new columns
+5. Preserves all existing data
+
+## Scalability & Capacity
+
+### Current Capacity (SQLite + PythonAnywhere Free)
+
+- **Concurrent Users:** 5-10 users browsing simultaneously
+- **Peak Traffic:** 20-50 page views per minute
+- **Daily Users:** 100-500 users
+- **Status:** ✅ Fine for small sites
+
+### Upgrade Path
+
+**Phase 1: Small Site (< 50 daily users)**
+- SQLite + PythonAnywhere Free
+- Capacity: 5-10 concurrent users
+
+**Phase 2: Growing Site (50-500 daily users)**
+- Migrate to PostgreSQL/MySQL
+- Upgrade to PythonAnywhere Hacker ($5/month)
+- Capacity: 50-200 concurrent users
+
+**Phase 3: Popular Site (500-5000 daily users)**
+- PostgreSQL/MySQL database
+- PythonAnywhere Web Developer ($12/month) or better
+- Add Redis caching
+- Capacity: 200-1000+ concurrent users
+
+**Phase 4: High Traffic Site (5000+ daily users)**
+- Dedicated PostgreSQL database
+- Multiple web servers (load balancing)
+- CDN for static files
+- Redis caching
+- Capacity: 1000+ concurrent users
+
+### Signs You Need to Upgrade
+
+**Warning Signs:**
+- Pages loading slowly (3+ seconds)
+- Database lock errors
+- Payment requests timing out
+- Intermittent "site is down" reports
+
+**Critical Signs:**
+- Site completely unresponsive
+- Database corruption errors
+- CPU quota exceeded
+- Frequent 500 errors
 
 ## Supported File Types
 
@@ -235,8 +396,10 @@ Maximum file size: 512 MB
 ## Troubleshooting
 
 ### Database Issues
-- Delete the database file in `instance/` folder and restart the app to recreate
-- Check file permissions on the `instance/` directory
+- Delete database file in `instance/` folder and restart to recreate
+- Check file permissions on `instance/` directory
+- Verify database URL in environment variables
+- For migration issues, check error logs and restore from backup
 
 ### Email Not Working
 - Verify SMTP credentials in `.env`
@@ -253,6 +416,24 @@ Maximum file size: 512 MB
 - Verify file size is under 512 MB
 - Ensure file extension is in allowed list
 
+### PythonAnywhere Issues
+
+**ModuleNotFoundError:**
+```bash
+cd /home/chusi/pcmlegacy
+pip3.10 install --user -r requirements.txt
+```
+
+**FileNotFoundError:**
+- Verify path in WSGI file matches your directory
+- Check file structure
+
+**Database Errors:**
+```bash
+chmod 755 instance
+chmod 644 instance/*.db
+```
+
 ## Security Notes
 
 - Always use a strong `SECRET_KEY` in production
@@ -260,6 +441,7 @@ Maximum file size: 512 MB
 - Regularly update dependencies
 - Keep sensitive credentials in `.env` file (never commit to version control)
 - Review and adjust rate limiting settings as needed
+- Use environment variables for all sensitive configuration
 
 ## License
 
@@ -279,4 +461,5 @@ For issues, questions, or contributions, please contact the development team.
 - Admin dashboard
 - User management
 - SEO features
-
+- Database backup/restore
+- Safe migration system

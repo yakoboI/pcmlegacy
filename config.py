@@ -9,6 +9,9 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 3600,
+        # Connection pool settings (only applies to PostgreSQL/MySQL, not SQLite)
+        'pool_size': int(os.environ.get('DB_POOL_SIZE', 10)),  # Default 10 connections
+        'max_overflow': int(os.environ.get('DB_MAX_OVERFLOW', 20)),  # Allow 20 overflow connections
         'connect_args': {'check_same_thread': False} if 'sqlite' in (os.environ.get('DATABASE_URL') or 'sqlite:///pcm_store.db') else {}
     }
     WTF_CSRF_ENABLED = True

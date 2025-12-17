@@ -339,6 +339,11 @@
                         🏆 Top 10 Users
                     </a>
                 </li>
+                <li class="admin-nav-item">
+                    <a href="{{ url_for('admin_database') }}" class="admin-nav-link {% if request.endpoint == 'admin_database' %}active{% endif %}">
+                        💾 Database
+                    </a>
+                </li>
             </ul>
         </nav>
         

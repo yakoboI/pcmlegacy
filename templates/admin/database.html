@@ -1,0 +1,337 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Database Management{% endblock %}
+
+{% block content %}
+<div class="admin-section">
+    <h1>💾 Database Management</h1>
+    
+    <!-- Database Information -->
+    <div class="admin-card">
+        <h2>Database Information</h2>
+        {% if db_info.exists %}
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Status:</strong> <span class="status-success">✓ Active</span>
+            </div>
+            <div class="info-item">
+                <strong>File Path:</strong> <code>{{ db_info.path }}</code>
+            </div>
+            <div class="info-item">
+                <strong>File Size:</strong> <span class="highlight">{{ db_info.size_formatted }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Last Modified:</strong> {{ db_info.modified.strftime('%Y-%m-%d %H:%M:%S') if db_info.modified else 'N/A' }}
+            </div>
+            {% if db_info.tables %}
+            <div class="info-item">
+                <strong>Tables:</strong> {{ db_info.tables }}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="error-message">Database file not found at: {{ db_info.path }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Database Statistics -->
+    {% if db_stats %}
+    <div class="admin-card">
+        <h2>Database Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{ db_stats.total_tables }}</div>
+                <div class="stat-label">Tables</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ db_stats.total_rows }}</div>
+                <div class="stat-label">Total Rows</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ db_stats.calculated_size | filesizeformat }}</div>
+                <div class="stat-label">Calculated Size</div>
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 1.5rem;">Table Row Counts</h3>
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Table Name</th>
+                        <th>Row Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for table, count in db_stats.tables.items() %}
+                    <tr>
+                        <td><code>{{ table }}</code></td>
+                        <td>{{ count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Backup Actions -->
+    <div class="admin-card">
+        <h2>Backup Actions</h2>
+        <div class="action-buttons">
+            <button id="create-backup-btn" class="btn btn-primary">
+                📦 Create Backup
+            </button>
+        </div>
+        <p class="help-text">
+            Create a backup of your current database. The backup will be saved in the <code>instance/backups/</code> directory.
+        </p>
+    </div>
+
+    <!-- Existing Backups -->
+    <div class="admin-card">
+        <h2>Existing Backups</h2>
+        {% if backups %}
+        <p class="info-text">
+            Total backups: <strong>{{ backup_count }}</strong> | 
+            Total size: <strong>{{ total_backup_size | filesizeformat }}</strong>
+        </p>
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Size</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in backups %}
+                    <tr>
+                        <td><code>{{ backup.filename }}</code></td>
+                        <td>{{ backup.size_formatted }}</td>
+                        <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            <div class="action-buttons-inline">
+                                <button class="btn btn-sm btn-secondary restore-backup-btn" 
+                                        data-filename="{{ backup.filename }}">
+                                    🔄 Restore
+                                </button>
+                                <a href="{{ url_for('admin_download_backup', filename=backup.filename) }}" 
+                                   class="btn btn-sm btn-info">
+                                    ⬇️ Download
+                                </a>
+                                <button class="btn btn-sm btn-danger delete-backup-btn" 
+                                        data-filename="{{ backup.filename }}">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="info-text">No backups found. Create your first backup above.</p>
+        {% endif %}
+    </div>
+
+    <!-- Warning -->
+    <div class="admin-card warning-card">
+        <h3>⚠️ Important Notes</h3>
+        <ul>
+            <li>Always create a backup before restoring from an older backup</li>
+            <li>Restoring a database will replace all current data</li>
+            <li>After restoring, you may need to reload the web application</li>
+            <li>Keep backups in a safe location outside the server</li>
+            <li>Regular backups are recommended for production environments</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create Backup
+    document.getElementById('create-backup-btn').addEventListener('click', function() {
+        if (!confirm('Create a new database backup? This may take a moment.')) {
+            return;
+        }
+        
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Creating backup...';
+        
+        fetch('{{ url_for("admin_backup_database") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✓ ' + data.message);
+                location.reload();
+            } else {
+                alert('✗ ' + data.message);
+                btn.disabled = false;
+                btn.textContent = '📦 Create Backup';
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            btn.disabled = false;
+            btn.textContent = '📦 Create Backup';
+        });
+    });
+
+    // Restore Backup
+    document.querySelectorAll('.restore-backup-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filename = this.dataset.filename;
+            if (!confirm(`⚠️ WARNING: This will replace your current database with the backup "${filename}".\n\nA backup of your current database will be created first.\n\nAre you sure you want to continue?`)) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('backup_filename', filename);
+            
+            fetch('{{ url_for("admin_restore_database") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✓ ' + data.message + '\n\nPlease reload the web application.');
+                    location.reload();
+                } else {
+                    alert('✗ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        });
+    });
+
+    // Delete Backup
+    document.querySelectorAll('.delete-backup-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filename = this.dataset.filename;
+            if (!confirm(`Delete backup "${filename}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            fetch(`{{ url_for("admin_delete_backup", filename="") }}${filename}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✓ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('✗ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        });
+    });
+});
+</script>
+
+<style>
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.info-item {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.info-item strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.info-item code {
+    font-size: 0.875rem;
+    word-break: break-all;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.action-buttons-inline {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.warning-card {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.warning-card h3 {
+    color: #856404;
+}
+
+.warning-card ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.warning-card li {
+    margin: 0.5rem 0;
+    color: #856404;
+}
+
+.help-text {
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.info-text {
+    margin-bottom: 1rem;
+    color: #666;
+}
+</style>
+{% endblock %}
+

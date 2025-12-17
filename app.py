@@ -20,6 +20,14 @@ try:
     IMAGE_OPTIMIZATION_AVAILABLE = True
 except ImportError:
     IMAGE_OPTIMIZATION_AVAILABLE = False
+try:
+    from utils.db_backup import (
+        backup_database, restore_database, list_backups, 
+        delete_backup, get_database_info, get_database_statistics
+    )
+    DB_BACKUP_AVAILABLE = True
+except ImportError:
+    DB_BACKUP_AVAILABLE = False
 from models import db, User, Category, Material, AdminLog, MobilePaymentMethod, DownloadRecord, VisitorRecord, PageView, News, Subscription, SubscriptionPlan, PasswordResetToken, LimitedAccessDownload, TermsOfService, HelpRequest, TopUser, UserVisit, MpesaTransaction, MaterialView
 from forms import *
 from config import config
@@ -291,12 +299,31 @@ def handle_413(e):
     flash(f'Upload too large ({size_mb} MB). Maximum allowed is 512 MB.', 'error')
     return redirect(request.referrer or url_for('admin_add_material'))
 def init_db():
+    """Initialize database - safe migration that preserves data"""
     with app.app_context():
-        db.create_all()
-        add_missing_columns()
+        # Use safe migration that never drops tables or data
+        try:
+            from utils.db_migrations import safe_migrate_database
+            migration_result = safe_migrate_database()
+            if migration_result['success']:
+                print(f"✓ {migration_result['message']}")
+                if migration_result.get('migrations_applied'):
+                    for migration in migration_result['migrations_applied']:
+                        print(f"  - {migration}")
+            else:
+                print(f"⚠ Migration warning: {migration_result['message']}")
+                # Fallback to basic create_all
+                db.create_all()
+                add_missing_columns()
+        except ImportError:
+            # Fallback if migration module not available
+            print("⚠ Migration module not available, using basic migration")
+            db.create_all()
+            add_missing_columns()
+        
         create_default_data()
 def add_missing_columns():
-    """Add missing columns to existing database tables"""
+    """Add missing columns to existing database tables - Legacy function for backward compatibility"""
     try:
         inspector = inspect(db.engine)
         if 'subscriptions' in inspector.get_table_names():
@@ -2290,6 +2317,135 @@ def admin_visitor_stats():
                          total_visitors=total_visitors,
                          unique_visitors=unique_visitors,
                          total_page_views=total_page_views)
+@app.route('/admin/database')
+@login_required
+def admin_database():
+    """Database backup, restore, and volume management"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    if not DB_BACKUP_AVAILABLE:
+        flash('Database backup functionality is not available.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    try:
+        db_info = get_database_info()
+        db_stats = get_database_statistics()
+        backups = list_backups()
+        
+        # Calculate total backup size
+        total_backup_size = sum(b['size'] for b in backups)
+        
+        return render_template('admin/database.html',
+                             db_info=db_info,
+                             db_stats=db_stats,
+                             backups=backups,
+                             total_backup_size=total_backup_size,
+                             backup_count=len(backups))
+    except Exception as e:
+        current_app.logger.error(f"Error loading database page: {e}")
+        flash(f'Error loading database information: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
+@app.route('/admin/database/backup', methods=['POST'])
+@login_required
+def admin_backup_database():
+    """Create a database backup"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    if not DB_BACKUP_AVAILABLE:
+        return jsonify({'success': False, 'message': 'Backup functionality not available'}), 500
+    
+    try:
+        backup_result = backup_database()
+        log_admin_action('Created database backup', 'database', None, 
+                        f"Backup: {backup_result['backup_filename']}")
+        return jsonify({
+            'success': True,
+            'message': f"Backup created successfully: {backup_result['backup_filename']}",
+            'backup': backup_result
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error creating backup: {e}")
+        return jsonify({'success': False, 'message': f'Failed to create backup: {str(e)}'}), 500
+@app.route('/admin/database/restore', methods=['POST'])
+@login_required
+def admin_restore_database():
+    """Restore database from backup"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    if not DB_BACKUP_AVAILABLE:
+        return jsonify({'success': False, 'message': 'Restore functionality not available'}), 500
+    
+    backup_filename = request.form.get('backup_filename')
+    if not backup_filename:
+        return jsonify({'success': False, 'message': 'Backup filename required'}), 400
+    
+    try:
+        restore_result = restore_database(backup_filename, create_backup=True)
+        log_admin_action('Restored database from backup', 'database', None,
+                        f"Restored from: {backup_filename}")
+        return jsonify({
+            'success': True,
+            'message': f"Database restored successfully from {backup_filename}. Please reload the application.",
+            'restore': restore_result
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error restoring database: {e}")
+        return jsonify({'success': False, 'message': f'Failed to restore database: {str(e)}'}), 500
+@app.route('/admin/database/backup/<filename>/delete', methods=['POST'])
+@login_required
+def admin_delete_backup(filename):
+    """Delete a backup file"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    if not DB_BACKUP_AVAILABLE:
+        return jsonify({'success': False, 'message': 'Backup functionality not available'}), 500
+    
+    try:
+        delete_result = delete_backup(filename)
+        log_admin_action('Deleted database backup', 'database', None, f"Deleted: {filename}")
+        return jsonify({
+            'success': True,
+            'message': f"Backup {filename} deleted successfully"
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error deleting backup: {e}")
+        return jsonify({'success': False, 'message': f'Failed to delete backup: {str(e)}'}), 500
+@app.route('/admin/database/download/<filename>')
+@login_required
+def admin_download_backup(filename):
+    """Download a backup file"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    if not DB_BACKUP_AVAILABLE:
+        flash('Backup functionality not available.', 'error')
+        return redirect(url_for('admin_database'))
+    
+    try:
+        from pathlib import Path
+        backup_dir = Path(app.instance_path) / 'backups'
+        backup_path = backup_dir / filename
+        
+        if not backup_path.exists() or not filename.startswith('pcm_store_backup_'):
+            flash('Backup file not found or invalid.', 'error')
+            return redirect(url_for('admin_database'))
+        
+        return send_from_directory(
+            str(backup_dir),
+            filename,
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error downloading backup: {e}")
+        flash(f'Error downloading backup: {str(e)}', 'error')
+        return redirect(url_for('admin_database'))
 @app.route('/admin/news')
 @login_required
 def admin_news():

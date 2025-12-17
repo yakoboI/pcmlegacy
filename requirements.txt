@@ -1,3 +1,8 @@
+# Requirements for PCM Legacy Store
+# Works for both development and production (PythonAnywhere)
+# Install with: pip install -r requirements.txt
+
+# Core Flask Dependencies
 Flask==2.3.3
 Werkzeug==2.3.7
 Jinja2==3.1.2
@@ -5,23 +10,39 @@ MarkupSafe==2.1.3
 itsdangerous==2.1.2
 click==8.1.7
 blinker==1.6.3
+
+# Flask Extensions
 Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.3
 Flask-WTF==1.1.1
-WTForms==3.0.1
-email-validator==2.0.0
-Pillow==10.0.1
 Flask-Mail==0.9.1
 Flask-Compress==1.14
+
+# Form Validation
+WTForms==3.0.1
+email-validator==2.0.0
+
+# Image Processing
+Pillow==10.0.1
+
+# Security & Encryption
 pycryptodome>=3.23.0
+
+# Configuration
 python-dotenv==1.0.0
 
-# Testing (optional)
-pytest>=7.0.0
-pytest-flask>=1.3.0
-pytest-cov>=4.0.0
+# Note: PythonAnywhere provides its own WSGI server, so gunicorn is not needed
+# SQLite is included with Python, no additional driver needed
 
-# Production Server (choose one)
-gunicorn>=21.0.0
-# waitress>=2.1.0  # Alternative for Windows
-# uwsgi>=2.0.0  # Alternative for Linux
+# Optional: For production monitoring and logging
+# sentry-sdk[flask]>=1.30.0
+
+# Optional: If upgrading to PostgreSQL or MySQL in the future, uncomment:
+# psycopg2-binary>=2.9.0  # PostgreSQL
+# PyMySQL>=1.0.0  # MySQL
+# mysqlclient>=2.1.0  # MySQL (alternative)
+
+# Optional: For development testing (uncomment if needed)
+# pytest>=7.0.0
+# pytest-flask>=1.3.0
+# pytest-cov>=4.0.0

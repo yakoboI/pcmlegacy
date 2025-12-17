@@ -140,9 +140,9 @@ class Material(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True, index=True)
     file_path = db.Column(db.String(500))
-    file_size = db.Column(db.String(20))
+    file_size = db.Column(db.Integer)  # Size in bytes
     file_format = db.Column(db.String(10))
     pages = db.Column(db.Integer)
     image_path = db.Column(db.String(500))
@@ -151,7 +151,7 @@ class Material(db.Model):
     is_digital = db.Column(db.Boolean, default=True)
     is_free = db.Column(db.Boolean, default=False)
     is_video = db.Column(db.Boolean, default=False)
-    video_duration = db.Column(db.String(20))
+    video_duration = db.Column(db.Integer)  # Duration in seconds
     video_quality = db.Column(db.String(20))
     video_thumbnail = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -340,15 +340,17 @@ class Subscription(db.Model):
     """User subscription periods managed by admin"""
     __tablename__ = 'subscriptions'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    start_date = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    end_date = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plans.id', ondelete='SET NULL'), nullable=True, index=True)
+    start_date = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    end_date = db.Column(db.DateTime, nullable=False, index=True)
     max_materials = db.Column(db.Integer, nullable=False, default=100)
     materials_accessed = db.Column(db.Integer, default=0)
-    is_active = db.Column(db.Boolean, default=True)
-    payment_status = db.Column(db.String(20), default='pending')
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    payment_status = db.Column(db.String(20), default='pending', index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('subscriptions', lazy='dynamic'))
+    plan = db.relationship('SubscriptionPlan', backref='subscriptions')
     def _normalize_datetime(self, dt):
         """Normalize datetime to UTC-aware for comparison"""
         if dt is None:
