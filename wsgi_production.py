@@ -11,6 +11,11 @@ import os
 # Set production environment
 os.environ['FLASK_ENV'] = 'production'
 
+# SECURITY NOTE: Do NOT hardcode SECRET_KEY here!
+# SECRET_KEY must be set via PythonAnywhere Web tab → Environment variables
+# Hardcoding SECRET_KEY in version control is a security vulnerability.
+# The config.py module will raise ValueError if SECRET_KEY is missing in production.
+
 # Set the path to your PythonAnywhere project directory
 # This should match your "Source code" and "Working directory" settings
 path = '/home/chusi/pcmlegacy'
