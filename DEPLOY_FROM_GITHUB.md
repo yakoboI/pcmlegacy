@@ -192,4 +192,3 @@ Run it:
 ```bash
 ./deploy.sh
 ```
-

@@ -28,11 +28,17 @@ except OSError as e:
     # Try alternative path
     alt_path = '/home/chusi/pcm'
     if os.path.exists(alt_path):
-        path = alt_path
-        if path not in sys.path:
-            sys.path.insert(0, path)
-        os.chdir(path)
-        print(f"✓ Changed to alternative directory: {path}")
+        try:
+            path = alt_path
+            if path not in sys.path:
+                sys.path.insert(0, path)
+            os.chdir(path)
+            print(f"✓ Changed to alternative directory: {path}")
+        except OSError as e2:
+            print(f"✗ Error: Could not change to alternative directory {alt_path}: {e2}")
+            print("⚠ Continuing with original path, but app may not work correctly")
+    else:
+        print(f"⚠ Warning: Alternative path {alt_path} does not exist")
 
 # Add virtualenv site-packages to path if virtualenv exists
 venv_path = os.path.join(path, 'venv')
@@ -46,8 +52,10 @@ if os.path.exists(venv_path):
             break
 
 # Import the Flask application
+app_import_successful = False
 try:
     from app import app as application
+    app_import_successful = True
     print("✓ Flask app imported successfully")
 except ImportError as e:
     print(f"✗ Error importing Flask app: {e}")
@@ -72,20 +80,24 @@ except ImportError as e:
         """, 500
 
 # Initialize database (safe migration that preserves data)
-try:
-    with application.app_context():
-        # Ensure instance directory exists for SQLite database
-        instance_path = os.path.join(path, 'instance')
-        if not os.path.exists(instance_path):
-            os.makedirs(instance_path)
-            print(f"✓ Created instance directory: {instance_path}")
-        
-        from app import init_db
-        init_db()
-        print("✓ Database initialized safely - all data preserved")
-except Exception as e:
-    print(f"⚠ Database initialization warning: {e}")
-    # Don't fail if database init has issues - app should still work
-    import traceback
-    traceback.print_exc()
+# Only attempt if app import was successful
+if app_import_successful:
+    try:
+        with application.app_context():
+            # Ensure instance directory exists for SQLite database
+            instance_path = os.path.join(path, 'instance')
+            if not os.path.exists(instance_path):
+                os.makedirs(instance_path)
+                print(f"✓ Created instance directory: {instance_path}")
+            
+            from app import init_db
+            init_db()
+            print("✓ Database initialized safely - all data preserved")
+    except Exception as e:
+        print(f"⚠ Database initialization warning: {e}")
+        # Don't fail if database init has issues - app should still work
+        import traceback
+        traceback.print_exc()
+else:
+    print("⚠ Skipping database initialization - app module not imported successfully")
 
