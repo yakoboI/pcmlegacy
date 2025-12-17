@@ -52,8 +52,8 @@ Thumbs.db
 *.log
 logs/
 
-# Uploads (optional - uncomment if you don't want to track uploads)
-# static/uploads/
+# Uploads (user-uploaded files - videos, images, documents)
+static/uploads/
 
 # PythonAnywhere
 .pythonanywhere/
