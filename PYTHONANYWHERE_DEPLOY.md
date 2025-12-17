@@ -1,268 +1,182 @@
-# PythonAnywhere Deployment - Method 3
+# PythonAnywhere Deployment Guide
 
-## Step-by-Step Commands
+## Quick Fix for "No module named 'portalsdk'" Error
 
-Run these commands **one by one** in PythonAnywhere's Bash console:
+This guide addresses the common error: **"Could not import Flask application from app.py - Error: No module named 'portalsdk'"**
 
-### Step 1: Navigate to Your Project Directory
+## Root Cause
+
+The `portalsdk` module is a **local package** located in the `portal-sdk/` directory. Python cannot find it because:
+1. The `portal-sdk` directory is not added to Python's module search path (`sys.path`)
+2. Missing dependencies required by `portalsdk` (specifically `requests`)
+
+## Solution Steps
+
+### Step 1: Verify Project Structure
+
+Ensure your PythonAnywhere project has this structure:
+```
+/home/chusi/pcmlegacy/  (or /home/chusi/pcm/)
+├── app.py
+├── wsgi_production.py
+├── requirements.txt
+├── portal-sdk/
+│   ├── portalsdk/
+│   │   ├── __init__.py
+│   │   └── api.py
+│   └── setup.py
+└── ... (other files)
+```
+
+### Step 2: Update WSGI File
+
+The `wsgi_production.py` file has been updated to automatically add the `portal-sdk` directory to Python's path. 
+
+**Copy the updated `wsgi_production.py` content to your PythonAnywhere WSGI file:**
+- Location: `/var/www/yourusername_pythonanywhere_com_wsgi.py`
+- Or edit via: PythonAnywhere Dashboard → Web tab → WSGI configuration file
+
+### Step 3: Install Dependencies
+
+In PythonAnywhere Bash console, run:
+
 ```bash
-cd /home/chusi/pcmlegacy
+# Navigate to your project directory
+cd /home/chusi/pcmlegacy  # or /home/chusi/pcm
+
+# Activate virtualenv (if using one)
+source venv/bin/activate  # or your venv path
+
+# Install all dependencies including requests (required by portalsdk)
+pip install --user -r requirements.txt
+
+# Verify portalsdk dependencies are installed
+pip show requests pycryptodome
 ```
 
-### Step 2: Initialize Git Repository
+### Step 4: Verify Portal-SDK Directory
+
+Ensure the `portal-sdk` directory exists and contains the `portalsdk` package:
+
 ```bash
-git init
+# Check if portal-sdk exists
+ls -la /home/chusi/pcmlegacy/portal-sdk/
+
+# Should show:
+# portalsdk/
+# setup.py
+# requirements.txt
 ```
 
-### Step 3: Rename Branch to Main (if Git created 'master')
-```bash
-git branch -m main
-```
+### Step 5: Set Environment Variables
 
-### Step 4: Add GitHub Remote
-```bash
-git remote add origin https://github.com/yakoboI/pcmlegacy.git
-```
-
-### Step 5: Fetch from GitHub
-```bash
-git fetch origin
-```
-
-### Step 6: Set Upstream and Pull
-```bash
-git branch --set-upstream-to=origin/main main
-git pull origin main
-```
-
-**OR** if you prefer to checkout:
-```bash
-git checkout -b main origin/main
-```
-
-### Step 7: Install Dependencies
-```bash
-# Replace 3.10 with your Python version (check in Web tab)
-pip3.10 install --user -r requirements.txt
-```
-
-### Step 8: Verify Installation
-```bash
-python3.10 -c "import flask; print('✓ Flask installed')"
-python3.10 -c "import flask_mail; print('✓ Flask-Mail installed')"
-python3.10 -c "import flask_login; print('✓ Flask-Login installed')"
-```
-
-### Step 9: Update WSGI File
-
-1. Go to **Web** tab in PythonAnywhere
-2. Click on your web app
-3. Click **WSGI configuration file** link (`/var/www/chusi_pythonanywhere_com_wsgi.py`)
-4. Replace entire content with this:
-
-```python
-"""
-Production WSGI Configuration for PythonAnywhere
-This file is optimized for PythonAnywhere hosting with SQLite database.
-
-Copy this content to your PythonAnywhere WSGI file:
-/var/www/yourusername_pythonanywhere_com_wsgi.py
-"""
-import sys
-import os
-
-# Set production environment
-os.environ['FLASK_ENV'] = 'production'
-
-# Update this path to match your actual PythonAnywhere directory
-# Common paths: /home/chusi/pcm or /home/chusi/pcmlegacy
-path = '/home/chusi/pcmlegacy'
-
-# Add the path to Python path if not already there
-if path not in sys.path:
-    sys.path.insert(0, path)
-
-# Change to the application directory
-try:
-    os.chdir(path)
-    print(f"✓ Changed to directory: {path}")
-except OSError as e:
-    print(f"⚠ Warning: Could not change to {path}: {e}")
-    # Try alternative path
-    alt_path = '/home/chusi/pcm'
-    if os.path.exists(alt_path):
-        path = alt_path
-        if path not in sys.path:
-            sys.path.insert(0, path)
-        os.chdir(path)
-        print(f"✓ Changed to alternative directory: {path}")
-
-# Add virtualenv site-packages to path if virtualenv exists
-venv_path = os.path.join(path, 'venv')
-if os.path.exists(venv_path):
-    # Try common Python versions
-    for python_version in ['python3.12', 'python3.11', 'python3.10', 'python3.9']:
-        site_packages = os.path.join(venv_path, 'lib', python_version, 'site-packages')
-        if os.path.exists(site_packages) and site_packages not in sys.path:
-            sys.path.insert(0, site_packages)
-            print(f"✓ Added virtualenv site-packages: {site_packages}")
-            break
-
-# Import the Flask application
-try:
-    from app import app as application
-    print("✓ Flask app imported successfully")
-except ImportError as e:
-    print(f"✗ Error importing Flask app: {e}")
-    import traceback
-    traceback.print_exc()
-    # Create a minimal app to show error instead of "Hello from Flask!"
-    from flask import Flask
-    application = Flask(__name__)
-    @application.route('/')
-    def error():
-        return f"""
-        <h1>Configuration Error</h1>
-        <p>Could not import Flask application from app.py</p>
-        <p>Error: {str(e)}</p>
-        <p>Please check:</p>
-        <ul>
-            <li>The path in wsgi_production.py matches your PythonAnywhere directory</li>
-            <li>All dependencies are installed in your virtualenv</li>
-            <li>app.py exists in the correct location</li>
-        </ul>
-        <p>Check the error log in PythonAnywhere for more details.</p>
-        """, 500
-
-# Initialize database (safe migration that preserves data)
-try:
-    with application.app_context():
-        # Ensure instance directory exists for SQLite database
-        instance_path = os.path.join(path, 'instance')
-        if not os.path.exists(instance_path):
-            os.makedirs(instance_path)
-            print(f"✓ Created instance directory: {instance_path}")
-        
-        from app import init_db
-        init_db()
-        print("✓ Database initialized safely - all data preserved")
-except Exception as e:
-    print(f"⚠ Database initialization warning: {e}")
-    # Don't fail if database init has issues - app should still work
-    import traceback
-    traceback.print_exc()
-```
-
-5. Click **Save**
-
-### Step 10: Configure Static Files
-
-In **Web** tab, under **Static files**:
-- **URL:** `/static/`
-- **Directory:** `/home/chusi/pcmlegacy/static/`
-
-Click **Add a new static files mapping** if needed.
-
-### Step 11: Set Environment Variables
-
-In **Web** tab, under **Environment variables**, add:
-```
-FLASK_ENV=production
-SECRET_KEY=your-strong-secret-key-here
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=true
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-MPESA_API_KEY=your-mpesa-api-key
-MPESA_PUBLIC_KEY=your-mpesa-public-key
-MPESA_SERVICE_PROVIDER_CODE=your-service-provider-code
-MPESA_COUNTRY=TZN
-MPESA_CURRENCY=TZS
-MPESA_ENV=sandbox
-```
-
-### Step 12: Reload Web App
-
+In PythonAnywhere Dashboard:
 1. Go to **Web** tab
-2. Click the green **Reload** button
-3. Wait a few seconds
-4. Click **Error log** to check for any errors
+2. Click on your web app
+3. Scroll to **"Environment variables"** section
+4. Add: `SECRET_KEY=your-strong-secret-key-here`
+5. Click **"Reload"** button
 
-### Step 13: Test Your Website
+**Generate a strong secret key:**
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
 
-Visit your website URL (e.g., `https://chusi.pythonanywhere.com`) and verify:
-- ✅ Homepage loads
-- ✅ Can navigate pages
-- ✅ Login works (if applicable)
-- ✅ Static files load (CSS, images)
+### Step 6: Reload Web App
 
----
+After making changes:
+1. Go to PythonAnywhere Dashboard → **Web** tab
+2. Click the **"Reload"** button for your web app
+3. Check the error log if issues persist
 
 ## Troubleshooting
 
-### If you get "fatal: not a git repository"
-You're not in the right directory. Run:
+### Error: "No module named 'portalsdk'"
+
+**Check:**
+1. ✅ `portal-sdk` directory exists in project root
+2. ✅ `wsgi_production.py` includes code to add `portal-sdk` to `sys.path`
+3. ✅ All dependencies installed: `pip install -r requirements.txt`
+4. ✅ Web app reloaded after changes
+
+**Debug in PythonAnywhere Bash:**
 ```bash
 cd /home/chusi/pcmlegacy
-pwd  # Should show /home/chusi/pcmlegacy
+python3 -c "import sys; sys.path.insert(0, 'portal-sdk'); from portalsdk import APIContext; print('✓ portalsdk imports successfully')"
 ```
 
-### If you get "remote origin already exists"
-Remove it first:
+### Error: "No module named 'requests'"
+
+**Fix:**
 ```bash
-git remote remove origin
-git remote add origin https://github.com/yakoboI/pcmlegacy.git
+pip install --user requests>=2.18.4
 ```
 
-### If Git created 'master' branch instead of 'main'
-After `git init`, rename it:
+### Error: "No module named 'Crypto'"
+
+**Fix:**
 ```bash
-git branch -m main
+pip install --user pycryptodome>=3.23.0
 ```
 
-### If packages don't install
-Check your Python version in Web tab, then use the correct pip:
+### Check Error Logs
+
+View detailed error logs:
+1. PythonAnywhere Dashboard → **Web** tab
+2. Click **"Error log"** link
+3. Look for import errors and traceback details
+
+## Manual Path Addition (Alternative)
+
+If the automatic path addition in `wsgi_production.py` doesn't work, you can manually add it at the top of your WSGI file:
+
+```python
+import sys
+import os
+
+# Add portal-sdk to Python path
+project_path = '/home/chusi/pcmlegacy'  # Update with your actual path
+portal_sdk_path = os.path.join(project_path, 'portal-sdk')
+if portal_sdk_path not in sys.path:
+    sys.path.insert(0, portal_sdk_path)
+```
+
+## Alternative: Install Portal-SDK as Package
+
+If you prefer to install `portalsdk` as a package:
+
 ```bash
-# For Python 3.10
-pip3.10 install --user -r requirements.txt
-
-# For Python 3.11
-pip3.11 install --user -r requirements.txt
+cd /home/chusi/pcmlegacy/portal-sdk
+pip install --user -e .
 ```
 
-### If you see import errors
-Check error log in Web tab and install missing packages:
-```bash
-pip3.10 install --user <package-name>
-```
+This installs it in "editable" mode, so changes are reflected immediately.
 
----
+## Verification Checklist
 
-## Future Updates
+Before deploying, verify:
 
-To pull latest changes from GitHub:
+- [ ] `portal-sdk/portalsdk/__init__.py` exists
+- [ ] `portal-sdk/portalsdk/api.py` exists
+- [ ] `requirements.txt` includes `requests>=2.18.4`
+- [ ] `requirements.txt` includes `pycryptodome>=3.23.0`
+- [ ] `wsgi_production.py` adds `portal-sdk` to `sys.path`
+- [ ] All dependencies installed: `pip install -r requirements.txt`
+- [ ] `SECRET_KEY` environment variable set in PythonAnywhere
+- [ ] Web app reloaded after changes
+- [ ] Error log checked for any remaining issues
 
-```bash
-cd /home/chusi/pcmlegacy
+## Additional Resources
 
-# Backup database first!
-cp instance/pcm_store.db instance/pcm_store_backup_$(date +%Y%m%d_%H%M%S).db
+- [PythonAnywhere WSGI Documentation](https://help.pythonanywhere.com/pages/Flask/)
+- [Python Module Search Path](https://docs.python.org/3/tutorial/modules.html#the-module-search-path)
+- [Flask Deployment Guide](https://flask.palletsprojects.com/en/latest/deploying/)
 
-# Pull updates
-git pull origin main
+## Support
 
-# Install new dependencies (if any)
-pip3.10 install --user -r requirements.txt
+If issues persist after following this guide:
+1. Check PythonAnywhere error logs for detailed error messages
+2. Verify Python version compatibility (Python 3.9+ recommended)
+3. Ensure virtualenv is properly activated
+4. Check file permissions on `portal-sdk` directory
 
-# Reload web app in Web tab
-```
-
----
-
-## Quick Reference
-
-**Project Directory:** `/home/chusi/pcmlegacy`  
-**Database Location:** `/home/chusi/pcmlegacy/instance/pcm_store.db`  
-**WSGI File:** `/var/www/chusi_pythonanywhere_com_wsgi.py`  
-**GitHub Repo:** `https://github.com/yakoboI/pcmlegacy.git`

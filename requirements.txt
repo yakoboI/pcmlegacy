@@ -28,6 +28,9 @@ Pillow==10.0.1
 # Security & Encryption
 pycryptodome>=3.23.0
 
+# HTTP Requests (required by portal-sdk)
+requests>=2.18.4
+
 # Configuration
 python-dotenv==1.0.0
 
